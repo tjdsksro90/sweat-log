@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import type { Database } from "./database.types";
 import { getSupabaseEnv } from "./env";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/auth"];
+const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/design"];
 
 const isPublicPath = (pathname: string) =>
   PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));

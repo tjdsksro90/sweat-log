@@ -6,8 +6,8 @@ import Link from "next/link";
 
 import { type AuthFormState, INITIAL_AUTH_FORM_STATE } from "@/features/auth";
 import { Button } from "@/shared/ui/button";
+import { Field, FieldDescription, FieldLabel } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
 
 type AuthFormProps = {
   mode: "login" | "signup";
@@ -20,26 +20,28 @@ export function AuthForm({ action, mode }: AuthFormProps) {
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="email">이메일</Label>
+      <Field>
+        <FieldLabel htmlFor="email">이메일</FieldLabel>
         <Input autoComplete="email" id="email" inputMode="email" name="email" required type="email" />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="password">비밀번호</Label>
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="password">비밀번호</FieldLabel>
         <Input
           autoComplete={isSignup ? "new-password" : "current-password"}
           id="password"
           minLength={6}
+          aria-describedby={isSignup ? "password-hint" : undefined}
           name="password"
           required
           type="password"
         />
-      </div>
+        {isSignup && <FieldDescription id="password-hint">6자 이상 입력해 주세요.</FieldDescription>}
+      </Field>
       {isSignup && (
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="nickname">닉네임</Label>
+        <Field>
+          <FieldLabel htmlFor="nickname">닉네임</FieldLabel>
           <Input id="nickname" maxLength={20} name="nickname" placeholder="크루에게 보일 이름" required />
-        </div>
+        </Field>
       )}
       {state.error && (
         <p className="text-destructive text-sm" role="alert">
@@ -52,7 +54,7 @@ export function AuthForm({ action, mode }: AuthFormProps) {
       <p className="text-center text-muted-foreground text-sm">
         {isSignup ? "이미 계정이 있나요? " : "처음이에요? "}
         <Link
-          className="font-medium text-primary underline-offset-4 hover:underline"
+          className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-4"
           href={isSignup ? "/login" : "/signup"}
         >
           {isSignup ? "로그인" : "가입하기"}

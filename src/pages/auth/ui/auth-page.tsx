@@ -20,12 +20,12 @@ export function SignupPage() {
 
 function AuthLayout({ children, subtitle }: { children: React.ReactNode; subtitle: string }) {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-10 px-6 py-12">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-10 px-6 pt-[calc(env(safe-area-inset-top)+3rem)] pb-[calc(env(safe-area-inset-bottom)+3rem)]">
       <header className="flex flex-col gap-2">
         <h1 className="font-bold text-4xl tracking-tight">
-          땀일기<span className="text-primary">.</span>
+          땀일기<span className="text-foreground">.</span>
         </h1>
-        <p className="text-muted-foreground">{subtitle}</p>
+        <p className="text-body text-muted-foreground">{subtitle}</p>
       </header>
       {children}
     </main>
