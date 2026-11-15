@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import Link from "next/link";
 
 import type { WorkoutDetail } from "@/entities/workout/model/contracts";
@@ -7,7 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Chip } from "@/shared/ui/chip";
 
-export function WorkoutDetailView({ workout }: { workout: WorkoutDetail }) {
+export function WorkoutDetailView({ workout, comments }: { workout: WorkoutDetail; comments?: ReactNode }) {
   return (
     <div className="flex flex-col gap-6">
       <Button
@@ -97,7 +99,7 @@ export function WorkoutDetailView({ workout }: { workout: WorkoutDetail }) {
           수정
         </Button>
       )}
-      <section id="workout-comments" aria-label="댓글" />
+      {comments}
     </div>
   );
 }

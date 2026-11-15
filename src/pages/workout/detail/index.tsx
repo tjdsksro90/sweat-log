@@ -1,6 +1,10 @@
+import { Suspense } from "react";
+
 import { notFound } from "next/navigation";
 
 import { getWorkoutDetail } from "@/entities/workout/api/server-queries";
+import { WorkoutComments } from "@/features/workout-comment/ui/workout-comments";
+import { WorkoutCommentsLoading } from "@/features/workout-comment/ui/workout-comments-loading";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
 
 import { WorkoutDetailView } from "./ui/workout-detail-view";
@@ -11,7 +15,14 @@ export async function WorkoutDetailPage({ params }: { params: Promise<{ workoutI
   if (!workout) notFound();
   return (
     <PageLayout title="운동 기록">
-      <WorkoutDetailView workout={workout} />
+      <WorkoutDetailView
+        workout={workout}
+        comments={
+          <Suspense fallback={<WorkoutCommentsLoading />}>
+            <WorkoutComments workoutId={workout.id} />
+          </Suspense>
+        }
+      />
     </PageLayout>
   );
 }

@@ -7,6 +7,10 @@ import { SAMPLE_STRENGTH_DETAIL } from "@/entities/workout/model/fixtures";
 import { WorkoutDetailPage } from "./index";
 
 vi.mock("@/entities/workout/api/server-queries", () => ({ getWorkoutDetail: vi.fn() }));
+// 댓글은 async Server Component라 Vitest가 렌더링하지 못하므로 자리만 확인한다.
+vi.mock("@/features/workout-comment/ui/workout-comments", () => ({
+  WorkoutComments: ({ workoutId }: { workoutId: string }) => <div data-testid="comments">{workoutId}</div>,
+}));
 vi.mock("next/navigation", () => ({
   notFound: () => {
     throw new Error("NOT_FOUND");
@@ -19,6 +23,7 @@ describe("상세 조회 연결", () => {
     render(await WorkoutDetailPage({ params: Promise.resolve({ workoutId: SAMPLE_STRENGTH_DETAIL.id }) }));
     expect(getWorkoutDetail).toHaveBeenCalledWith(SAMPLE_STRENGTH_DETAIL.id);
     expect(screen.getByRole("table", { name: "스쿼트" })).toBeInTheDocument();
+    expect(screen.getByTestId("comments")).toHaveTextContent(SAMPLE_STRENGTH_DETAIL.id);
   });
   it("없거나 권한 없는 기록의 null 결과는 404로 처리한다", async () => {
     vi.mocked(getWorkoutDetail).mockResolvedValue(null);
