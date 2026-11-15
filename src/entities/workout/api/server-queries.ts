@@ -8,9 +8,6 @@ import { requireUser } from "@/shared/api/supabase/require-user";
 
 const PAGE_SIZE = 20;
 
-// 연속 운동 일수를 셀 때 거슬러 올라가는 최대 기간
-const STREAK_LOOKBACK_DAYS = 365;
-
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // 결과 행은 model/workout-mappers.ts의 WorkoutListRow 모양이어야 한다(타입 추론으로 검사된다).
@@ -85,28 +82,23 @@ export const getWeeklySummary = async (today: string = getKstToday()): Promise<W
   const { supabase, user } = await requireUser();
   const weekStart = getWeekStart(today);
 
-  const [week, recent] = await Promise.all([
+  const [week, streak] = await Promise.all([
     supabase
       .from("workouts")
       .select("kind, workout_date, run:run_details(distance_meters), sets:strength_sets(weight_kg, reps)")
       .eq("user_id", user.id)
       .gte("workout_date", weekStart)
       .lte("workout_date", addDays(weekStart, 6)),
-    supabase
-      .from("workouts")
-      .select("workout_date")
-      .eq("user_id", user.id)
-      .gte("workout_date", addDays(today, -STREAK_LOOKBACK_DAYS))
-      .lte("workout_date", today)
-      .order("workout_date", { ascending: false }),
+    // 오늘 아직 안 했으면 어제부터 센다. 기간 제한 없이 DB가 날짜 중복을 지우고 센다.
+    supabase.rpc("get_workout_streak", { p_today: today }),
   ]);
 
   if (week.error) throw week.error;
-  if (recent.error) throw recent.error;
+  if (streak.error) throw streak.error;
 
   return buildWeeklySummary({
     today,
     weekWorkouts: week.data,
-    recentDates: recent.data.map((row) => row.workout_date),
+    streakDays: streak.data,
   });
 };

@@ -4,7 +4,6 @@ import { SAMPLE_WEEKLY_SUMMARY } from "@/entities/workout/model/fixtures";
 import {
   addDays,
   buildWeeklySummary,
-  countStreakDays,
   getKstToday,
   getWeekStart,
   type WeeklyWorkoutRow,
@@ -31,17 +30,6 @@ describe("날짜 계산", () => {
   });
 });
 
-describe("countStreakDays", () => {
-  it("연속 운동 일수는 오늘, 오늘 안 했으면 어제부터 센다", () => {
-    const dates = ["2026-11-14", "2026-11-13", "2026-11-13", "2026-11-11"];
-
-    expect(countStreakDays(dates, "2026-11-14")).toBe(2);
-    expect(countStreakDays(dates, "2026-11-15")).toBe(2);
-    expect(countStreakDays(dates, "2026-11-16")).toBe(0);
-    expect(countStreakDays([], "2026-11-14")).toBe(0);
-  });
-});
-
 describe("buildWeeklySummary", () => {
   it("이번 주 기록을 요약한다", () => {
     const weekWorkouts: WeeklyWorkoutRow[] = [
@@ -65,7 +53,7 @@ describe("buildWeeklySummary", () => {
     const summary = buildWeeklySummary({
       today: "2026-11-14",
       weekWorkouts,
-      recentDates: ["2026-11-14", "2026-11-13", "2026-11-11"],
+      streakDays: 2,
     });
 
     // fixtures의 3720은 세트와 맞지 않는 임의 값이라 실제 합계(2120)로 비교한다.
@@ -73,7 +61,7 @@ describe("buildWeeklySummary", () => {
   });
 
   it("기록이 없는 주", () => {
-    expect(buildWeeklySummary({ today: "2026-11-16", weekWorkouts: [], recentDates: [] })).toEqual({
+    expect(buildWeeklySummary({ today: "2026-11-16", weekWorkouts: [], streakDays: 0 })).toEqual({
       weekStart: "2026-11-16",
       workoutCount: 0,
       runDistanceMeters: 0,

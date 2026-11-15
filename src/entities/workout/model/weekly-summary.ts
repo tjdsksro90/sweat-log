@@ -36,28 +36,14 @@ export const getWeekStart = (date: string) => {
   return addDays(date, -((dayOfWeek + 6) % 7));
 };
 
-// 오늘 운동했으면 오늘부터, 아직이면 어제부터 거꾸로 하루도 안 빠진 날 수. 오늘 아직 안 했다고 연속 기록이 끊기지 않는다.
-export const countStreakDays = (workoutDates: string[], today: string) => {
-  const dates = new Set(workoutDates);
-  let day = dates.has(today) ? today : addDays(today, -1);
-  let streak = 0;
-
-  while (dates.has(day)) {
-    streak += 1;
-    day = addDays(day, -1);
-  }
-
-  return streak;
-};
-
 export const buildWeeklySummary = ({
-  recentDates,
+  streakDays,
   today,
   weekWorkouts,
 }: {
   today: string;
   weekWorkouts: WeeklyWorkoutRow[]; // 이번 주(월~일) 기록
-  recentDates: string[]; // 연속 일수 계산용 최근 운동 날짜
+  streakDays: number; // get_workout_streak RPC가 센 연속 운동 일수
 }): WeeklySummary => {
   const runDistanceMeters = weekWorkouts.reduce(
     (total, workout) => total + (workout.kind === "run" ? (workout.run?.distance_meters ?? 0) : 0),
@@ -74,7 +60,7 @@ export const buildWeeklySummary = ({
     workoutCount: weekWorkouts.length,
     runDistanceMeters,
     strengthVolumeKg: Math.round(strengthVolumeKg * 100) / 100,
-    streakDays: countStreakDays(recentDates, today),
+    streakDays,
     activeDates: [...new Set(weekWorkouts.map((workout) => workout.workout_date))].sort(),
   };
 };
