@@ -50,3 +50,8 @@ supabase/.branches/
 
 # claude code
 .claude/settings.local.json
+
+# 저장소 안에 만든 병렬 작업 worktree
+/.claude/worktrees/
+/.worktrees/
+/testsweat-log-*/
