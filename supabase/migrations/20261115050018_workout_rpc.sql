@@ -2,7 +2,8 @@
 --
 -- save_workout: 공통 정보와 종류별 상세, 함께한 친구를 한 트랜잭션으로 저장한다.
 -- list_workouts: 목록 화면이 보는 범위(내 기록 또는 크루 피드)를 고르고 커서로 이어 본다.
--- 둘 다 security invoker라서 RLS가 그대로 적용된다. 권한은 정책이 판단하고, 함수는 입력 모양과
+-- get_workout_streak: 홈 요약의 연속 운동 일수.
+-- 모두 security invoker라서 RLS가 그대로 적용된다. 권한은 정책이 판단하고, 함수는 입력 모양과
 -- 화면에 돌려줄 오류 코드만 책임진다.
 
 -- 입력은 contracts.ts의 WorkoutInput을 snake_case로 바꾼 JSON이다.
@@ -229,7 +230,39 @@ as $$
     );
 $$;
 
+-- 내가 작성한 기록 기준 연속 운동 일수. p_today에 운동했으면 그날부터, 아직이면 전날부터 거꾸로
+-- 하루도 안 빠진 날 수를 센다. 앱에서 날짜를 받아 세면 조회 기간과 PostgREST 행 제한에 잘리므로 DB에서 센다.
+-- p_today는 한국 시간 오늘이다(DB의 current_date는 UTC라서 앱이 넘긴다).
+create function public.get_workout_streak(p_today date) returns integer
+  language sql
+  stable
+  security invoker
+  set search_path to ''
+as $$
+  with days as (
+    select distinct w.workout_date as day
+    from public.workouts w
+    where w.user_id = (select auth.uid())
+      and w.workout_date <= p_today
+  ),
+  streak_start as (
+    select max(day) as day
+    from days
+    where day >= p_today - 1
+  )
+  -- 시작일에서 n번째로 이른 날짜가 정확히 n일 전이면 아직 끊기지 않았다.
+  select count(*)::integer
+  from (
+    select d.day, row_number() over (order by d.day desc) - 1 as position
+    from days d, streak_start s
+    where d.day <= s.day
+  ) ranked, streak_start s
+  where s.day - ranked.day = ranked.position;
+$$;
+
 revoke all on function public.save_workout(jsonb) from public, anon;
 revoke all on function public.list_workouts(uuid, date, date, text, date, timestamptz, uuid) from public, anon;
 grant execute on function public.save_workout(jsonb) to authenticated;
 grant execute on function public.list_workouts(uuid, date, date, text, date, timestamptz, uuid) to authenticated;
+revoke all on function public.get_workout_streak(date) from public, anon;
+grant execute on function public.get_workout_streak(date) to authenticated;
