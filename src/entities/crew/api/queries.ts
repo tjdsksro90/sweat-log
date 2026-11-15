@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { CrewDetail, CrewSummary } from "@/entities/crew/model/crew";
+import { isUuid } from "@/entities/crew/model/uuid";
 import { requireUser } from "@/shared/api/supabase/require-user";
 
 export const getMyCrews = async (): Promise<CrewSummary[]> => {
@@ -11,6 +12,7 @@ export const getMyCrews = async (): Promise<CrewSummary[]> => {
 };
 
 export const getCrew = async (crewId: string): Promise<CrewDetail | null> => {
+  if (!isUuid(crewId)) return null;
   const { supabase } = await requireUser();
   const { data, error } = await supabase
     .from("crews")

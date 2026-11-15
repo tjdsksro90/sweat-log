@@ -1,10 +1,12 @@
 import "server-only";
 
+import { isUuid } from "@/entities/crew/model/uuid";
 import { requireUser } from "@/shared/api/supabase/require-user";
 
 import type { WorkoutComment } from "../model/comment";
 
 export const getWorkoutComments = async (workoutId: string): Promise<WorkoutComment[]> => {
+  if (!isUuid(workoutId)) return [];
   const { supabase, user } = await requireUser();
   const { data, error } = await supabase
     .from("workout_comments")

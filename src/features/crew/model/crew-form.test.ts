@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   getCrewErrorMessage,
-  isCrewId,
   normalizeInviteCode,
   validateCrewName,
   validateInviteCode,
@@ -36,11 +35,5 @@ describe("크루 입력 검증", () => {
     expect(getCrewErrorMessage("secret database detail")).toBe(
       "크루 요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.",
     );
-  });
-
-  it("크루 식별자는 UUID만 받는다", () => {
-    expect(isCrewId("a1234567-abcd-1234-abcd-123456789abc")).toBe(true);
-    for (const id of [null, "", "../settings", "a1234567-abcd-1234-abcd-123456789abc/extra"])
-      expect(isCrewId(id)).toBe(false);
   });
 });

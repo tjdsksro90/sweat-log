@@ -18,9 +18,6 @@ export const validateInviteCode = (code: unknown) => {
   return null;
 };
 
-export const isCrewId = (value: unknown): value is string =>
-  typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
-
 export const getCrewErrorMessage = (message: string) => {
   if (message.includes("invalid_invite_code")) return "초대 코드를 다시 확인해 주세요.";
   return "크루 요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.";

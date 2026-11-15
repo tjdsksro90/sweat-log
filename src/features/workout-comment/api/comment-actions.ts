@@ -2,15 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 
+import { isUuid } from "@/entities/crew/model/uuid";
 import { requireUser } from "@/shared/api/supabase/require-user";
 
-import { type CommentFormState, isCommentResourceId, validateCommentBody } from "../model/comment-form";
+import { type CommentFormState, validateCommentBody } from "../model/comment-form";
 
 export const createComment = async (_state: CommentFormState, formData: FormData): Promise<CommentFormState> => {
   const { supabase, user } = await requireUser();
   const workoutId = formData.get("workoutId");
   const body = formData.get("body");
-  if (!isCommentResourceId(workoutId)) return { error: "운동 기록을 다시 확인해 주세요.", success: false };
+  if (!isUuid(workoutId)) return { error: "운동 기록을 다시 확인해 주세요.", success: false };
   const error = validateCommentBody(body);
   if (error || typeof body !== "string") return { error, success: false };
   const result = await supabase
@@ -26,8 +27,7 @@ export const deleteComment = async (_state: CommentFormState, formData: FormData
   const { supabase, user } = await requireUser();
   const workoutId = formData.get("workoutId");
   const commentId = formData.get("commentId");
-  if (!isCommentResourceId(workoutId) || !isCommentResourceId(commentId))
-    return { error: "댓글을 다시 확인해 주세요.", success: false };
+  if (!isUuid(workoutId) || !isUuid(commentId)) return { error: "댓글을 다시 확인해 주세요.", success: false };
   const result = await supabase
     .from("workout_comments")
     .delete()

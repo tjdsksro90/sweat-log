@@ -8,6 +8,3 @@ export const validateCommentBody = (body: unknown) => {
   }
   return null;
 };
-
-export const isCommentResourceId = (value: unknown): value is string =>
-  typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);

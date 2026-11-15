@@ -3,12 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { isUuid } from "@/entities/crew/model/uuid";
 import { requireUser } from "@/shared/api/supabase/require-user";
 
 import {
   type CrewFormState,
   getCrewErrorMessage,
-  isCrewId,
   normalizeInviteCode,
   validateCrewName,
   validateInviteCode,
@@ -39,7 +39,7 @@ export const joinCrew = async (_state: CrewFormState, formData: FormData): Promi
 export const leaveCrew = async (_state: CrewFormState, formData: FormData): Promise<CrewFormState> => {
   const { supabase, user } = await requireUser();
   const crewId = formData.get("crewId");
-  if (!isCrewId(crewId)) return { error: "크루를 다시 확인해 주세요." };
+  if (!isUuid(crewId)) return { error: "크루를 다시 확인해 주세요." };
   const membership = await supabase
     .from("crew_members")
     .select("role")
