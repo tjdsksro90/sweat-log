@@ -33,8 +33,10 @@ pnpm exec tsc --noEmit
 변경한 동작과 관련된 테스트가 있으면 해당 파일을 우선 실행한다.
 
 ```bash
-pnpm test src/path/to/example.test.mjs
+pnpm test src/path/to/example.test.ts
 ```
+
+작업 중에는 `pnpm test:watch`로 파일을 고칠 때마다 관련 테스트를 다시 돌릴 수 있다.
 
 공용 로직이 여러 기능에 영향을 주거나 전체 테스트 실행을 요청받은 경우에는 전체 테스트를 실행한다.
 
