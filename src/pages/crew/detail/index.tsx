@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getCrew } from "@/entities/crew/api/queries";
+import { getWorkoutPage } from "@/entities/workout/api/server-queries";
 import { leaveCrew } from "@/features/crew/api/crew-actions";
 import { CopyInviteCode } from "@/features/crew/ui/copy-invite-code";
 import { LeaveCrew } from "@/features/crew/ui/leave-crew";
@@ -10,13 +11,22 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
 
+import { CrewFeed } from "./ui/crew-feed";
 import { CrewMembers } from "./ui/crew-members";
 
-export async function CrewDetailPage({ params }: { params: Promise<{ crewId: string }> }) {
+export async function CrewDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ crewId: string }>;
+  searchParams: Promise<{ cursor?: string | string[] }>;
+}) {
   const { crewId } = await params;
   const crew = await getCrew(crewId);
   if (!crew) notFound();
   const { user } = await requireUser();
+  const { cursor } = await searchParams;
+  const page = await getWorkoutPage({ crewId, cursor: typeof cursor === "string" ? cursor : undefined });
   return (
     <PageLayout title={crew.name}>
       <Button variant="ghost" role="link" render={<Link href="/crews" />} nativeButton={false}>
@@ -40,6 +50,7 @@ export async function CrewDetailPage({ params }: { params: Promise<{ crewId: str
         </CardContent>
       </Card>
       <CrewMembers members={crew.members} />
+      <CrewFeed crewId={crew.id} page={page} hasCursor={typeof cursor === "string" && Boolean(cursor)} />
       <LeaveCrew crewId={crew.id} isOwner={crew.ownerId === user.id} action={leaveCrew} />
     </PageLayout>
   );
