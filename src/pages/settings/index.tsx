@@ -1,5 +1,6 @@
 import { getMyProfile } from "@/entities/profile/api/get-my-profile";
 import { LogoutButton } from "@/features/auth";
+import { Card, CardContent } from "@/shared/ui/card";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
 
 export async function SettingsPage() {
@@ -7,10 +8,12 @@ export async function SettingsPage() {
 
   return (
     <PageLayout title="설정">
-      <section className="rounded-xl border bg-card p-5">
-        <p className="text-muted-foreground text-sm">닉네임</p>
-        <p className="mt-1 font-semibold text-lg">{profile.nickname}</p>
-      </section>
+      <Card>
+        <CardContent>
+          <p className="text-muted-foreground text-sm">닉네임</p>
+          <p className="mt-1 break-words font-semibold text-title">{profile.nickname}</p>
+        </CardContent>
+      </Card>
       <LogoutButton />
     </PageLayout>
   );

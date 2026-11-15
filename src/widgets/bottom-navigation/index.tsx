@@ -22,7 +22,7 @@ export function BottomNavigation() {
   return (
     <nav
       aria-label="주요 메뉴"
-      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-40 border-t bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
     >
       <ul className="mx-auto grid max-w-md grid-cols-4">
         {TABS.map(({ href, icon: TabIcon, label }) => {
@@ -33,12 +33,17 @@ export function BottomNavigation() {
               <Link
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex h-16 flex-col items-center justify-center gap-1 text-xs transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground",
+                  "flex h-16 flex-col items-center justify-center gap-1 text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+                  isActive ? "font-semibold text-foreground" : "text-muted-foreground",
                 )}
                 href={href}
               >
-                <TabIcon size={24} weight={isActive ? "fill" : "regular"} />
+                <TabIcon
+                  aria-hidden="true"
+                  className={isActive ? "rounded-lg bg-primary p-1 text-primary-foreground" : "p-1"}
+                  size={32}
+                  weight={isActive ? "fill" : "regular"}
+                />
                 {label}
               </Link>
             </li>
