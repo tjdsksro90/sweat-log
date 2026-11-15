@@ -332,6 +332,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      get_workout_streak: { Args: { p_today: string }; Returns: number };
       join_crew_by_code: {
         Args: { p_invite_code: string };
         Returns: {
