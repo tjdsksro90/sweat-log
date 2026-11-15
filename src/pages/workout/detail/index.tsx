@@ -1,0 +1,17 @@
+import { notFound } from "next/navigation";
+
+import { getWorkoutDetail } from "@/entities/workout/api/server-queries";
+import { PageLayout } from "@/shared/ui/layouts/page-layout";
+
+import { WorkoutDetailView } from "./ui/workout-detail-view";
+
+export async function WorkoutDetailPage({ params }: { params: Promise<{ workoutId: string }> }) {
+  const { workoutId } = await params;
+  const workout = await getWorkoutDetail(workoutId);
+  if (!workout) notFound();
+  return (
+    <PageLayout title="운동 기록">
+      <WorkoutDetailView workout={workout} />
+    </PageLayout>
+  );
+}
