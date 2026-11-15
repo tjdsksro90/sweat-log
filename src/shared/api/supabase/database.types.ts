@@ -332,6 +332,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      get_workout_streak: { Args: { p_today: string }; Returns: number };
       join_crew_by_code: {
         Args: { p_invite_code: string };
         Returns: {
@@ -349,6 +350,37 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      list_workouts: {
+        Args: {
+          p_crew_id?: string;
+          p_cursor_created_at?: string;
+          p_cursor_date?: string;
+          p_cursor_id?: string;
+          p_from?: string;
+          p_kind?: string;
+          p_to?: string;
+        };
+        Returns: {
+          created_at: string;
+          crew_id: string | null;
+          duration_seconds: number | null;
+          id: string;
+          kind: string;
+          memo: string | null;
+          place_name: string | null;
+          title: string | null;
+          updated_at: string;
+          user_id: string;
+          workout_date: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "workouts";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      save_workout: { Args: { p_input: Json }; Returns: string };
     };
     Enums: {
       [_ in never]: never;

@@ -17,7 +17,11 @@ values
 
 do $$
 begin
-  assert (select count(*) from public.profiles) = 3, '가입한 3명의 프로필이 생겨야 한다';
+  -- 로컬 DB에 직접 가입해 둔 계정이 있어도 통과하도록 테스트 계정만 센다.
+  assert (
+    select count(*) from public.profiles
+    where id in ('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000c')
+  ) = 3, '가입한 3명의 프로필이 생겨야 한다';
   assert (select nickname from public.profiles where id = '00000000-0000-0000-0000-00000000000c') = 'c',
     '닉네임이 없으면 이메일 앞부분을 쓴다';
 end $$;
