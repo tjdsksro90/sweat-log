@@ -15,7 +15,24 @@ const fromBase64Url = (value: string) => atob(value.replaceAll("-", "+").replace
 export const encodeWorkoutCursor = (cursor: WorkoutCursor) =>
   toBase64Url(JSON.stringify([cursor.workoutDate, cursor.createdAt, cursor.id]));
 
-// 망가진 커서(손으로 고친 URL 등)는 null. 호출하는 쪽은 첫 페이지로 본다.
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+// PostgREST가 주는 timestamptz 모양: 2026-11-14T06:10:00.123456+00:00
+const TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// 2026-02-30처럼 모양만 맞는 날짜는 Date가 3월로 넘겨 버리므로 되돌린 값과 비교한다.
+const isValidDate = (date: string) =>
+  DATE_PATTERN.test(date) && new Date(`${date}T00:00:00Z`).toISOString().startsWith(date);
+
+const isValidTimestamp = (timestamp: string) =>
+  TIMESTAMP_PATTERN.test(timestamp) &&
+  isValidDate(timestamp.slice(0, 10)) &&
+  !Number.isNaN(Date.parse(timestamp.replace(/(\.\d{3})\d+/, "$1")));
+
+/**
+ * 망가진 커서(손으로 고친 URL 등)는 null. 호출하는 쪽은 첫 페이지로 본다.
+ * 값까지 검사해야 한다. 형식이 틀린 값이 RPC로 가면 DB 타입 변환에서 실패해 첫 페이지로 돌아가지 못한다.
+ */
 export const decodeWorkoutCursor = (value: string): WorkoutCursor | null => {
   try {
     const parsed: unknown = JSON.parse(fromBase64Url(value));
@@ -25,6 +42,11 @@ export const decodeWorkoutCursor = (value: string): WorkoutCursor | null => {
     }
 
     const [workoutDate, createdAt, id] = parsed as string[];
+
+    if (!isValidDate(workoutDate) || !isValidTimestamp(createdAt) || !UUID_PATTERN.test(id)) {
+      return null;
+    }
+
     return { workoutDate, createdAt, id };
   } catch {
     return null;
