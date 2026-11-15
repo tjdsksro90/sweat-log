@@ -1,5 +1,5 @@
 /**
- * Server Action이 받은 WorkoutInput 검증과 save_workout 입력 변환. 범위 규칙은 workout-input.ts와 같은 LIMITS를 쓴다.
+ * Server Action이 받은 WorkoutInput 검증과 오류 문구. save_workout 입력 변환은 entities/workout/model/workout-mappers. 범위 규칙은 workout-input.ts와 같은 LIMITS를 쓴다.
  * Server Action 인자는 누구나 POST로 보낼 수 있으니 화면 검증만 믿지 않는다.
  */
 import type { StrengthExercise, WorkoutInput } from "@/entities/workout/model/contracts";
@@ -134,30 +134,15 @@ export const parseWorkoutInput = (value: unknown, today = getTodayInSeoul()): Pa
   };
 };
 
-// save_workout(p_input jsonb)는 WorkoutInput을 snake_case로 바꾼 JSON을 받는다.
-export const toSaveWorkoutPayload = (input: WorkoutInput) => ({
-  companion_ids: input.companionIds,
-  crew_id: input.crewId,
-  duration_seconds: input.durationSeconds,
-  exercises: input.exercises.map((exercise) => ({
-    name: exercise.name,
-    sets: exercise.sets.map((set) => ({ reps: set.reps, weight_kg: set.weightKg })),
-  })),
-  id: input.id ?? null,
-  kind: input.kind,
-  memo: input.memo,
-  place_name: input.placeName,
-  run: input.run ? { distance_meters: input.run.distanceMeters, duration_seconds: input.run.durationSeconds } : null,
-  title: input.title,
-  workout_date: input.workoutDate,
-});
+type WorkoutError = { message: string; code?: string } | null | undefined;
 
-// save_workout·삭제가 던지는 오류 코드를 화면 문구로 바꾼다. 23514(check 제약 위반)도 입력 오류로 본다.
-export const getWorkoutErrorMessage = (message: string | undefined) => {
-  if (message?.includes("not_authenticated")) return "다시 로그인해 주세요.";
-  if (message?.includes("workout_not_found")) return "기록을 찾을 수 없어요. 이미 지워졌거나 내 기록이 아니에요.";
-  if (message?.includes("invalid_crew")) return "내가 속한 크루에만 공유할 수 있어요.";
-  if (message?.includes("invalid_companion")) return "함께한 친구는 같은 크루 친구만 고를 수 있어요.";
-  if (message?.includes("invalid_workout") || message?.includes("check constraint")) return INVALID_INPUT;
+// save_workout·삭제가 던지는 오류를 화면 문구로 바꾼다. 23514(check 제약 위반)는 길이·범위 초과라 입력 오류로 본다.
+export const getWorkoutErrorMessage = (error: WorkoutError) => {
+  const message = error?.message ?? "";
+  if (message.includes("not_authenticated")) return "다시 로그인해 주세요.";
+  if (message.includes("workout_not_found")) return "기록을 찾을 수 없어요. 이미 지워졌거나 내 기록이 아니에요.";
+  if (message.includes("invalid_crew")) return "내가 속한 크루에만 공유할 수 있어요.";
+  if (message.includes("invalid_companion")) return "함께한 친구는 같은 크루 친구만 고를 수 있어요.";
+  if (message.includes("invalid_workout") || error?.code === "23514") return INVALID_INPUT;
   return "잠시 후 다시 시도해 주세요.";
 };

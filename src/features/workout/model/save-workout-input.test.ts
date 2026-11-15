@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  getWorkoutErrorMessage,
-  parseWorkoutInput,
-  toSaveWorkoutPayload,
-} from "@/features/workout/model/save-workout-input";
+import { getWorkoutErrorMessage, parseWorkoutInput } from "@/features/workout/model/save-workout-input";
 import {
   addExercise,
   addSet,
@@ -86,6 +82,14 @@ describe("parseWorkoutInput", () => {
     });
   });
 
+  it("수정 기록의 id와 크루 친구는 그대로 두고, 겹친 친구는 한 번만 남긴다", () => {
+    const input = inputOf(
+      formOf({ crewId: CREW_ID, duration: { hours: "1", minutes: "", seconds: "" }, id: WORKOUT_ID, kind: "other" }),
+    );
+    const parsed = parseWorkoutInput({ ...input, companionIds: [FRIEND_ID, FRIEND_ID] }, TODAY);
+    expect(parsed).toEqual({ input: { ...input, companionIds: [FRIEND_ID] }, ok: true });
+  });
+
   it("무게의 부동소수 오차는 받는다", () => {
     const input = inputOf(strengthValues());
     const exercises = [{ name: "덤벨", sets: [{ reps: 5, weightKg: 20.33 }] }];
@@ -93,46 +97,17 @@ describe("parseWorkoutInput", () => {
   });
 });
 
-describe("toSaveWorkoutPayload", () => {
-  it("save_workout에 보낼 snake_case JSON으로 바꾼다", () => {
-    const input = inputOf({
-      ...runValues({ distanceKm: "5", duration: { hours: "", minutes: "30", seconds: "" } }),
-      companionIds: [FRIEND_ID],
-      crewId: CREW_ID,
-      id: WORKOUT_ID,
-    });
-
-    expect(toSaveWorkoutPayload(input)).toEqual({
-      companion_ids: [FRIEND_ID],
-      crew_id: CREW_ID,
-      duration_seconds: null,
-      exercises: [],
-      id: WORKOUT_ID,
-      kind: "run",
-      memo: null,
-      place_name: null,
-      run: { distance_meters: 5000, duration_seconds: 1800 },
-      title: null,
-      workout_date: TODAY,
-    });
-  });
-
-  it("새 기록은 id를 null로, 맨몸 운동은 weight_kg를 null로 보낸다", () => {
-    const payload = toSaveWorkoutPayload(inputOf(strengthValues()));
-    expect(payload.id).toBeNull();
-    expect(payload.exercises[1]).toEqual({ name: "푸시업", sets: [{ reps: 20, weight_kg: null }] });
-  });
-});
-
 describe("getWorkoutErrorMessage", () => {
   it("save_workout 오류 코드를 한국어로 바꾼다", () => {
-    expect(getWorkoutErrorMessage("invalid_companion")).toBe("함께한 친구는 같은 크루 친구만 고를 수 있어요.");
-    expect(getWorkoutErrorMessage("invalid_workout_detail")).toBe("입력한 값을 다시 확인해 주세요.");
+    expect(getWorkoutErrorMessage({ message: "invalid_companion" })).toBe(
+      "함께한 친구는 같은 크루 친구만 고를 수 있어요.",
+    );
+    expect(getWorkoutErrorMessage({ message: "invalid_workout_detail" })).toBe("입력한 값을 다시 확인해 주세요.");
     expect(getWorkoutErrorMessage(undefined)).toBe("잠시 후 다시 시도해 주세요.");
   });
 
   it("check 제약 위반(23514)은 입력 오류로 본다", () => {
     const message = 'new row for relation "workouts" violates check constraint "workouts_title_check"';
-    expect(getWorkoutErrorMessage(message)).toBe("입력한 값을 다시 확인해 주세요.");
+    expect(getWorkoutErrorMessage({ code: "23514", message })).toBe("입력한 값을 다시 확인해 주세요.");
   });
 });
