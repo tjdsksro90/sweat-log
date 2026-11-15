@@ -75,3 +75,9 @@ CSS, 문구, 아이콘, 단순 UI 조합, 테스트, 타입 선언, 내부 리�
 ```
 
 사용자가 특정 검증이나 전체 검증을 요청한 경우에는 해당 요청을 우선한다.
+
+## CI
+
+PR을 올리거나 `main`에 병합되면 GitHub Actions(`.github/workflows/ci.yml`)가 `pnpm lint`, `pnpm typecheck`, `pnpm test`를 실행한다. 프로덕션 빌드는 Vercel 배포가 맡는다.
+
+CI가 실패한 PR은 병합하지 않는다. 로컬에서 같은 명령으로 재현해 고친다.
