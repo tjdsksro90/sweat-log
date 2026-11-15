@@ -13,6 +13,7 @@
 | [B. 기록 작성](B-workout-form.md) | Claude | `feat/workout-form` | 바로 (로직부터, 화면은 E 병합 후. 데이터는 A 병합 후 연결) |
 | [C. 목록·통계](C-workout-list.md) | Codex | `feat/workout-list` | 바로 (로직부터, 화면은 E 병합 후. 데이터는 A 병합 후 연결) |
 | [D. 크루·댓글](D-crew.md) | Codex | `feat/crew` | 바로 (서버·검증부터, 화면은 E 병합 후) |
+| [F. 체험 데모](F-demo.md) | Claude | `feat/demo` | 1단계 화면이 모두 병합된 뒤 |
 | 리드 | Claude | `main` | 항상 |
 
 - **리드 세션**은 코드를 쓰지 않는다. 브리프 갱신, Codex PR 리뷰, 충돌 조정, 로드맵 체크를 맡는다.
