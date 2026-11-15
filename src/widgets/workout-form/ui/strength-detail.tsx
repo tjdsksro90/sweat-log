@@ -21,6 +21,9 @@ import { NumberInput } from "@/shared/ui/number-input";
 
 import { FormField } from "./form-field";
 
+// 세트 번호 · 무게 · 횟수 · 삭제
+const SET_ROW = "grid grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1fr)_2.75rem] items-start gap-2";
+
 type Update = (update: (values: WorkoutFormValues) => WorkoutFormValues) => void;
 
 function ExerciseCard({
@@ -66,6 +69,12 @@ function ExerciseCard({
           </Button>
         </div>
 
+        {/* 단위는 입력 안이 아니라 열 제목에 둔다. 좁은 화면에서도 100.25 같은 값이 다 보이게. */}
+        <div aria-hidden="true" className={`${SET_ROW} -mb-2 text-caption text-muted-foreground`}>
+          <span />
+          <span>무게 (kg)</span>
+          <span>횟수</span>
+        </div>
         <ol className="flex flex-col gap-3">
           {exercise.sets.map((set, setIndex) => {
             const setLabel = `${label} ${setIndex + 1}세트`;
@@ -75,10 +84,7 @@ function ExerciseCard({
             const repsError = errors[setErrorKey(exercise.key, set.key, "reps")];
 
             return (
-              <li
-                key={set.key}
-                className="grid grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1fr)_2.75rem] items-start gap-2"
-              >
+              <li key={set.key} className={SET_ROW}>
                 <span className="pt-3 text-caption text-muted-foreground tabular-nums">{setIndex + 1}세트</span>
                 <FormField
                   id={weightId}
@@ -86,43 +92,29 @@ function ExerciseCard({
                   error={weightError}
                 >
                   {(control) => (
-                    <div className="relative">
-                      <NumberInput
-                        {...control}
-                        value={set.weightKg}
-                        onChange={(event) =>
-                          onChange((values) =>
-                            updateSet(values, exercise.key, set.key, { weightKg: event.target.value }),
-                          )
-                        }
-                        placeholder="맨몸"
-                        className="pr-9"
-                        autoComplete="off"
-                      />
-                      <span aria-hidden="true" className="absolute top-3 right-3 text-caption text-muted-foreground">
-                        kg
-                      </span>
-                    </div>
+                    <NumberInput
+                      {...control}
+                      value={set.weightKg}
+                      onChange={(event) =>
+                        onChange((values) => updateSet(values, exercise.key, set.key, { weightKg: event.target.value }))
+                      }
+                      placeholder="맨몸"
+                      autoComplete="off"
+                    />
                   )}
                 </FormField>
                 <FormField id={repsId} label={<span className="sr-only">{setLabel} 횟수</span>} error={repsError}>
                   {(control) => (
-                    <div className="relative">
-                      <NumberInput
-                        {...control}
-                        inputMode="numeric"
-                        value={set.reps}
-                        onChange={(event) =>
-                          onChange((values) => updateSet(values, exercise.key, set.key, { reps: event.target.value }))
-                        }
-                        placeholder="0"
-                        className="pr-9"
-                        autoComplete="off"
-                      />
-                      <span aria-hidden="true" className="absolute top-3 right-3 text-caption text-muted-foreground">
-                        회
-                      </span>
-                    </div>
+                    <NumberInput
+                      {...control}
+                      inputMode="numeric"
+                      value={set.reps}
+                      onChange={(event) =>
+                        onChange((values) => updateSet(values, exercise.key, set.key, { reps: event.target.value }))
+                      }
+                      placeholder="0"
+                      autoComplete="off"
+                    />
                   )}
                 </FormField>
                 <Button
