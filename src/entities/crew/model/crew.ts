@@ -6,7 +6,7 @@ export type CrewSummary = {
 
 export type CrewMember = {
   userId: string;
-  nickname: string;
+  nickname: string | null;
   isOwner: boolean;
 };
 

@@ -19,7 +19,7 @@ export const getWorkoutComments = async (workoutId: string): Promise<WorkoutComm
   return data.map((comment) => ({
     id: comment.id,
     userId: comment.user_id,
-    nickname: comment.profiles?.nickname ?? "운동 친구",
+    nickname: comment.profiles?.nickname ?? null,
     body: comment.body,
     createdAt: comment.created_at,
     isMine: comment.user_id === user.id,

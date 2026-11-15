@@ -30,7 +30,7 @@ export const getCrew = async (crewId: string): Promise<CrewDetail | null> => {
       .sort((a, b) => a.joined_at.localeCompare(b.joined_at) || a.user_id.localeCompare(b.user_id))
       .map((member) => ({
         userId: member.user_id,
-        nickname: member.profiles?.nickname ?? "크루 친구",
+        nickname: member.profiles?.nickname ?? null,
         isOwner: member.role === "owner",
       })),
   };
