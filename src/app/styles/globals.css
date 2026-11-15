@@ -17,7 +17,10 @@
  * 시맨틱 토큰만 쓰고, 라이트·다크 차이는 이 파일에서 해결한다.
  */
 :root {
-  --radius: 0.75rem;
+  --radius: 0.875rem;
+  --overlay: oklch(0 0 0 / 45%);
+  --elevation-card: 0 2px 8px oklch(0 0 0 / 4%);
+  --elevation-sheet: 0 -8px 40px oklch(0 0 0 / 15%);
 
   --background: oklch(0.985 0.002 120);
   --foreground: oklch(0.18 0.01 120);
@@ -27,16 +30,16 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.01 120);
 
-  /* 브랜드: 땀 흘린 뒤의 형광 라임. 라이트 모드에서는 대비를 위해 한 단계 짙게 쓴다. */
-  --primary: oklch(0.62 0.17 135);
-  --primary-foreground: oklch(0.99 0 0);
+  /* 형광 라임 바탕에는 어두운 글자를 짝지어 두 모드 모두 대비를 확보한다. */
+  --primary: oklch(0.88 0.2 125);
+  --primary-foreground: oklch(0.18 0.02 125);
   --secondary: oklch(0.95 0.01 120);
   --secondary-foreground: oklch(0.22 0.01 120);
   --muted: oklch(0.95 0.005 120);
   --muted-foreground: oklch(0.5 0.01 120);
   --accent: oklch(0.95 0.03 130);
   --accent-foreground: oklch(0.22 0.01 120);
-  --destructive: oklch(0.58 0.22 27);
+  --destructive: oklch(0.51 0.19 27);
   --success: oklch(0.62 0.17 145);
   --border: oklch(0.91 0.005 120);
   --input: oklch(0.91 0.005 120);
@@ -79,7 +82,20 @@
 }
 
 @theme inline {
+  --shadow-card: var(--elevation-card);
+  --shadow-sheet: var(--elevation-sheet);
   --font-sans: "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --color-overlay: var(--overlay);
+  --text-stat: 2.5rem;
+  --text-stat--line-height: 1.1;
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.4;
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
+  --text-caption: 0.875rem;
+  --text-caption--line-height: 1.5;
+  --spacing-page: 1.25rem;
+  --spacing-section: 2rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
@@ -115,6 +131,7 @@
   }
 
   html {
+    color-scheme: light dark;
     -webkit-tap-highlight-color: transparent;
   }
 
