@@ -101,6 +101,7 @@ import { SegmentedControl } from "@/shared/ui/segmented-control";
 
 `Stat`은 라벨·표시 값·단위를 묶는다. 대표 숫자는 기본 `size="lg"`, 좁은 보조 열은 `size="sm"`(24px)을 쓴다.
 `EmptyState`는 기록이 없을 때 무엇을 하면 되는지 안내한다. `action`은 선택 사항이다. 로딩 실패는 빈 데이터와 구분해 호출 화면에서 설명한다.
+제목 단계는 `headingLevel={1}`부터 `headingLevel={6}`까지 지정할 수 있으며 기본값은 기존과 같은 `3`이다. 화면 제목 바로 아래에 두면 `headingLevel={2}`, 구역 제목 아래에 두면 `headingLevel={3}`처럼 문서 구조에 맞춘다. 글자 크기는 제목 단계와 무관하게 동일하다.
 
 ```tsx
 import { Stat } from "@/shared/ui/stat";
@@ -111,6 +112,7 @@ import { EmptyState } from "@/shared/ui/empty-state";
 <EmptyState
   icon={<SneakerIcon size={28} />}
   title="첫 땀을 기록해 볼까요?"
+  headingLevel={2}
   description="가벼운 산책도 좋아요. 오늘의 움직임을 남겨요."
   action={<Button onClick={startWorkout}>기록 시작하기</Button>}
 />
