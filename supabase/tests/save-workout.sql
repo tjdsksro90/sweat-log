@@ -161,6 +161,15 @@ select pg_temp.expect_error('{"kind":"other","workout_date":"어제"}', 'invalid
 select pg_temp.expect_error('{"kind":"other","workout_date":"2026-11-14","companion_ids":["not-a-uuid"]}', 'invalid_workout_input');
 select pg_temp.expect_error('"run"', 'invalid_workout_input');
 
+-- 타입 범위를 넘는 숫자와 상세의 빠진 필수 값도 DB 원문 대신 오류 코드로 나간다.
+select pg_temp.expect_error(
+  '{"kind":"strength","workout_date":"2026-11-14","exercises":[{"name":"스쿼트","sets":[{"weight_kg":60,"reps":99999}]}]}',
+  'invalid_workout_input');
+select pg_temp.expect_error(
+  '{"kind":"strength","workout_date":"2026-11-14","exercises":[{"sets":[{"weight_kg":60,"reps":10}]}]}',
+  'invalid_workout_detail');
+select pg_temp.expect_error('{"kind":"run","workout_date":"2026-11-14","run":{}}', 'invalid_workout_detail');
+
 -- 크루 밖 C를 함께한 친구로, 모르는 크루에 공유
 select pg_temp.expect_error(
   '{"kind":"other","workout_date":"2026-11-14","companion_ids":["00000000-0000-0000-0000-00000000000c"]}', 'invalid_companion');
