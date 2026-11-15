@@ -8,6 +8,10 @@ import { Textarea } from "@/shared/ui/textarea";
 import type { WorkoutFormCrew } from "../model/types";
 import { FormField } from "./form-field";
 
+// 크루 이름(30자)·닉네임이 띄어쓰기 없이 길어도 좁은 화면을 넘지 않게 칩 안에서 줄을 바꾼다.
+const LONG_CHIP = "h-auto min-w-0 max-w-full py-2";
+const LONG_CHIP_TEXT = "min-w-0 break-words";
+
 // 3단계: 제목·장소·메모, 공유할 크루와 함께한 친구
 export function FinishStep({
   values,
@@ -60,7 +64,7 @@ export function FinishStep({
         )}
       </FormField>
 
-      <FieldSet className="gap-3">
+      <FieldSet className="min-w-0 gap-3">
         <FieldLegend variant="label">공유할 크루</FieldLegend>
         {crews.length === 0 ? (
           <FieldDescription>크루에 들어가면 친구들과 기록을 나눌 수 있어요. 지금은 나만 봐요.</FieldDescription>
@@ -77,6 +81,7 @@ export function FinishStep({
               {crews.map((crew) => (
                 <FilterChip
                   key={crew.id}
+                  className={LONG_CHIP}
                   selected={values.crewId === crew.id}
                   onClick={() =>
                     onChange((current) =>
@@ -88,7 +93,7 @@ export function FinishStep({
                     )
                   }
                 >
-                  {crew.name}
+                  <span className={LONG_CHIP_TEXT}>{crew.name}</span>
                 </FilterChip>
               ))}
             </div>
@@ -97,19 +102,20 @@ export function FinishStep({
       </FieldSet>
 
       {selectedCrew && (
-        <FieldSet className="gap-3">
+        <FieldSet className="min-w-0 gap-3">
           <FieldLegend variant="label">함께한 친구 (선택)</FieldLegend>
           {selectedCrew.members.length === 0 ? (
-            <FieldDescription>아직 {selectedCrew.name}에 다른 친구가 없어요.</FieldDescription>
+            <FieldDescription className="break-words">아직 {selectedCrew.name}에 다른 친구가 없어요.</FieldDescription>
           ) : (
             <div className="flex flex-wrap gap-2">
               {selectedCrew.members.map((member) => (
                 <FilterChip
                   key={member.userId}
+                  className={LONG_CHIP}
                   selected={values.companionIds.includes(member.userId)}
                   onClick={() => onChange((current) => toggleCompanion(current, member.userId))}
                 >
-                  {member.nickname}
+                  <span className={LONG_CHIP_TEXT}>{member.nickname}</span>
                 </FilterChip>
               ))}
             </div>
