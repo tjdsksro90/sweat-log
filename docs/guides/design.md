@@ -80,6 +80,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 `FilterChip`은 버튼이며 `selected`, `onClick`, `disabled`로 제어한다. 선택은 색상 외에 `aria-pressed`로도 전달한다.
 `SegmentedControl`은 타임라인/달력이나 운동 종류처럼 하나만 고르는 전환에 쓴다. 탭 패널 UI가 아닌 단일 선택 버튼 그룹이다.
 키보드 화살표로 이동하고 Space로 선택할 수 있다. 선택된 항목을 다시 눌러도 선택을 유지한다.
+폼에서 사용할 때 `name`을 지정하면 현재 `value`가 hidden input을 통해 `FormData`에 포함된다. `disabled`인 그룹은 제출에서 제외되며, `name`을 생략하면 기존처럼 선택 UI만 제공한다.
 
 ```tsx
 import { Chip, FilterChip } from "@/shared/ui/chip";
@@ -89,6 +90,7 @@ import { SegmentedControl } from "@/shared/ui/segmented-control";
 <FilterChip kind="strength" selected={selected} onClick={() => setSelected(!selected)} />
 <SegmentedControl
   label="기록 보기"
+  name="view"
   value={view}
   onValueChange={setView}
   options={[{ value: "timeline", label: "타임라인" }, { value: "calendar", label: "달력" }]}

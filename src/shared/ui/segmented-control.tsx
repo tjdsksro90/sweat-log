@@ -5,6 +5,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/shared/ui/toggle-group";
 
 export function SegmentedControl<T extends string>({
   label,
+  name,
   value,
   onValueChange,
   options,
@@ -12,6 +13,7 @@ export function SegmentedControl<T extends string>({
   disabled,
 }: {
   label: string;
+  name?: string;
   value: T;
   onValueChange: (value: T) => void;
   options: readonly { value: T; label: string; disabled?: boolean }[];
@@ -30,6 +32,7 @@ export function SegmentedControl<T extends string>({
       className={cn("w-full rounded-xl bg-muted p-1", className)}
       spacing={1}
     >
+      {name && <input type="hidden" name={name} value={value} disabled={disabled} />}
       {options.map((option) => (
         <ToggleGroupItem
           key={option.value}
