@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+
 import {
   BottomSheet,
   BottomSheetContent,
@@ -13,6 +15,7 @@ import { FieldError } from "@/shared/ui/field";
 
 /**
  * 이탈·삭제 확인. 비동기 작업이 끝난 뒤 호출자가 닫도록 제어형으로만 쓴다(design.md 바텀 시트).
+ * 열면 취소 버튼에 포커스를 둔다. 바로 Enter를 눌러도 삭제·나가기가 실행되지 않게 한다.
  */
 export function ConfirmSheet({
   open,
@@ -39,6 +42,8 @@ export function ConfirmSheet({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
   return (
     <BottomSheet
       open={open}
@@ -46,7 +51,7 @@ export function ConfirmSheet({
         if (!nextOpen && !isPending) onCancel();
       }}
     >
-      <BottomSheetContent showCloseButton={false}>
+      <BottomSheetContent showCloseButton={false} initialFocus={cancelRef}>
         <BottomSheetHeader>
           <BottomSheetTitle>{title}</BottomSheetTitle>
           <BottomSheetDescription>{description}</BottomSheetDescription>
@@ -56,7 +61,7 @@ export function ConfirmSheet({
           <Button variant={destructive ? "destructive" : "primary"} size="lg" onClick={onConfirm} disabled={isPending}>
             {isPending && pendingLabel ? pendingLabel : confirmLabel}
           </Button>
-          <Button variant="secondary" size="lg" onClick={onCancel} disabled={isPending}>
+          <Button ref={cancelRef} variant="secondary" size="lg" onClick={onCancel} disabled={isPending}>
             {cancelLabel}
           </Button>
         </BottomSheetFooter>
