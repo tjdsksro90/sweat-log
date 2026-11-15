@@ -192,3 +192,12 @@ import {
 `pnpm exec biome check --write src app`, `pnpm lint`, `pnpm exec tsc --noEmit`을 실행한다. 서버/클라이언트 경계 변경은 `pnpm build`까지 확인한다.
 `/design`에서 기기 라이트·다크 모드, 360px 너비, 키보드 Tab/화살표/Space, 시트 Escape와 포커스 복귀를 확인한다.
 실제 모바일 소수 키패드와 노치 안전 영역은 대상 기기에서 추가 확인한다.
+
+### 검토용 스크린샷
+
+360px 프로덕션 미리보기에서 촬영했다. 화면 전체와 바텀 시트를 모드별로 비교할 수 있다.
+
+| 화면 | 라이트 | 다크 |
+| --- | --- | --- |
+| 컴포넌트 전체 | [라이트](design-assets/design-light.png) | [다크](design-assets/design-dark.png) |
+| 바텀 시트 | [라이트](design-assets/sheet-light.png) | [다크](design-assets/sheet-dark.png) |
