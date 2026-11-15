@@ -1,6 +1,4 @@
-"use client";
-
-import { useMemo } from "react";
+import type * as React from "react";
 
 import { cva, type VariantProps } from "class-variance-authority";
 
@@ -124,7 +122,7 @@ export function FieldDescription({ className, ...props }: React.ComponentProps<"
       className={cn(
         "text-left font-normal text-muted-foreground text-sm leading-normal group-has-data-horizontal/field:text-balance [[data-variant=legend]+&]:-mt-1.5",
         "nth-last-2:-mt-1 last:mt-0",
-        "[&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4",
+        "[&>a:hover]:text-foreground [&>a]:underline [&>a]:underline-offset-4",
         className,
       )}
       {...props}
@@ -167,27 +165,23 @@ export function FieldError({
 }: React.ComponentProps<"div"> & {
   errors?: Array<{ message?: string } | undefined>;
 }) {
-  const content = useMemo(() => {
-    if (children) {
-      return children;
+  let content = children;
+
+  if (!content) {
+    const messages = [...new Set(errors?.map((error) => error?.message).filter((message) => !!message))];
+
+    if (messages.length === 1) {
+      content = messages[0];
+    } else if (messages.length > 1) {
+      content = (
+        <ul className="ml-4 flex list-disc flex-col gap-1">
+          {messages.map((message) => (
+            <li key={message}>{message}</li>
+          ))}
+        </ul>
+      );
     }
-
-    if (!errors?.length) {
-      return null;
-    }
-
-    const uniqueErrors = [...new Map(errors.map((error) => [error?.message, error])).values()];
-
-    if (uniqueErrors?.length == 1) {
-      return uniqueErrors[0]?.message;
-    }
-
-    return (
-      <ul className="ml-4 flex list-disc flex-col gap-1">
-        {uniqueErrors.map((error) => error?.message && <li key={error.message}>{error.message}</li>)}
-      </ul>
-    );
-  }, [children, errors]);
+  }
 
   if (!content) {
     return null;
