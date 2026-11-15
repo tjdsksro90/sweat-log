@@ -20,12 +20,14 @@
 --
 -- 오류 코드(raise exception의 message):
 --   not_authenticated       로그인하지 않음
---   invalid_workout_input   필수 값이 없거나 형식이 틀림
---   invalid_workout_detail  종류와 상세가 맞지 않음(러닝인데 run이 없음, 헬스인데 종목이 없음 등)
+--   invalid_workout_input   필수 값(kind, workout_date)이 없거나, uuid·날짜·숫자 형식이 틀리거나,
+--                           숫자가 컬럼 타입 범위를 넘음(reps 99999 등)
+--   invalid_workout_detail  종류와 상세가 맞지 않거나(러닝인데 run이 없음, 헬스인데 종목이 없음 등)
+--                           상세의 필수 값이 빠짐(run의 거리·시간, 종목 이름, 세트 횟수)
 --   workout_not_found       수정할 기록이 없거나 내 기록이 아님
 --   invalid_crew            내가 속하지 않은 크루에 공유
 --   invalid_companion       크루 친구가 아닌 사람을 함께한 친구로 지정
--- 길이·범위 같은 값 검사는 테이블 check 제약이 맡는다(23514).
+-- 타입 범위 안에서 길이·값 범위(제목 50자, 횟수 1~1000 등)는 테이블 check 제약이 맡고, 원래 오류(23514)가 그대로 나간다.
 create function public.save_workout(p_input jsonb) returns uuid
   language plpgsql
   security invoker
@@ -174,9 +176,13 @@ begin
 
   return v_id;
 exception
-  -- 잘못된 uuid·날짜·숫자 문자열
-  when invalid_text_representation or invalid_datetime_format or datetime_field_overflow then
+  -- 잘못된 uuid·날짜·숫자 문자열, smallint·integer 범위를 넘는 숫자
+  when invalid_text_representation or invalid_datetime_format or datetime_field_overflow
+    or numeric_value_out_of_range then
     raise exception 'invalid_workout_input';
+  -- 공통 정보의 필수 값은 위에서 먼저 확인하므로, not null 위반은 상세(run, 종목, 세트)에서만 난다.
+  when not_null_violation then
+    raise exception 'invalid_workout_detail';
 end;
 $$;
 
