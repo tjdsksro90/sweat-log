@@ -1,0 +1,5 @@
+# Biome가 LF를 요구한다. Windows의 core.autocrlf 설정과 상관없이 worktree에서도 LF로 받는다.
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.woff2 binary
