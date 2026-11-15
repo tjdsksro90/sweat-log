@@ -10,7 +10,7 @@
 | 상수                 | `UPPER_SNAKE_CASE`         | `MAX_SETS`           |
 | 파일                 | `kebab-case`               | `workout-card.tsx`       |
 | 훅                   | `use-*.ts`                 | `use-workouts.ts`        |
-| 테스트               | 대상 파일명 + `.test.ts`   | `workout-form.test.ts`   |
+| 테스트               | 대상 파일명 + `.test.ts`, 컴포넌트는 `.test.tsx` | `workout-form.test.ts`, `auth-form.test.tsx` |
 
 ## 컴포넌트
 
@@ -60,6 +60,13 @@ src/shared/     # 도메인에 의존하지 않는 공용 코드 (ui, lib, api)
 - `@/` alias를 쓴다: `@/shared/ui/button`.
 - 테스트(Vitest)도 `vitest.config.ts`의 별칭 설정으로 같은 `@/` alias를 사용한다.
 - 테스트는 `vitest`에서 `describe`, `it`, `expect`를 import해 쓴다.
+
+## 테스트
+
+- 테스트 파일은 대상 파일 옆에 둔다.
+- `*.test.ts`는 node 환경(순수 함수), `*.test.tsx`는 jsdom 환경(컴포넌트)에서 돈다. 설정은 `vitest.config.ts`.
+- 컴포넌트는 `@testing-library/react`로 렌더링하고, 사용자 동작은 `@testing-library/user-event`로 흉내 낸다. 요소는 역할·레이블로 찾는다(`getByRole`, `getByLabelText`).
+- Server Action은 prop으로 받는 컴포넌트라면 `vi.fn()`으로 바꿔 넣어 테스트한다. `async` Server Component는 Vitest가 렌더링하지 못하므로 데이터 처리는 `model/`의 순수 함수로 떼어 테스트한다.
 
 ## 주석
 
