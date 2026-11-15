@@ -40,6 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# supabase CLI
+supabase/.temp/
+supabase/.branches/
+
 # codex
 .codex/md
 
