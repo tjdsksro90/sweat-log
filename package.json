@@ -16,8 +16,8 @@
     "db:reset": "supabase db reset",
     "db:migration:new": "supabase migration new",
     "db:migration:list": "supabase migration list",
-    "db:push:dry-run": "supabase db push --dry-run",
-    "db:push": "supabase db push",
+    "db:push:dry-run": "supabase db push --remote --dry-run",
+    "db:push": "supabase db push --remote",
     "db:types": "supabase gen types typescript --local > src/shared/api/supabase/database.types.ts"
   },
   "dependencies": {
