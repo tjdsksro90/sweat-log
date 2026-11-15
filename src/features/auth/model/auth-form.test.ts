@@ -11,9 +11,21 @@ describe("validateLogin", () => {
 });
 
 describe("validateSignup", () => {
+  const input = { email: "runner@example.com", password: "123456", passwordConfirm: "123456", nickname: "땀쟁이" };
+
   it("닉네임은 공백을 뺀 1~20자만 받는다", () => {
-    expect(validateSignup("runner@example.com", "123456", " 땀쟁이 ")).toBeNull();
-    expect(validateSignup("runner@example.com", "123456", "  ")).toBe("닉네임은 1~20자로 적어 주세요.");
+    expect(validateSignup({ ...input, nickname: " 땀쟁이 " })).toBeNull();
+    expect(validateSignup({ ...input, nickname: "  " })).toBe("닉네임은 1~20자로 적어 주세요.");
+  });
+
+  it("비밀번호 확인 값이 비밀번호와 같아야 한다", () => {
+    expect(validateSignup(input)).toBeNull();
+    expect(validateSignup({ ...input, passwordConfirm: "123457" })).toBe("비밀번호가 서로 달라요.");
+    expect(validateSignup({ ...input, passwordConfirm: "" })).toBe("비밀번호가 서로 달라요.");
+  });
+
+  it("비밀번호 길이 오류를 일치 검사보다 먼저 알려 준다", () => {
+    expect(validateSignup({ ...input, password: "123", passwordConfirm: "1234" })).toBe("비밀번호는 6자 이상이에요.");
   });
 });
 

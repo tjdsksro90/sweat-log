@@ -24,8 +24,10 @@ export const login = async (_state: AuthFormState, formData: FormData): Promise<
 export const signup = async (_state: AuthFormState, formData: FormData): Promise<AuthFormState> => {
   const email = readField(formData, "email").trim();
   const password = readField(formData, "password");
+  // 확인 값은 오타 검사에만 쓰고 Supabase에는 보내지 않는다.
+  const passwordConfirm = readField(formData, "passwordConfirm");
   const nickname = readField(formData, "nickname").trim();
-  const validationError = validateSignup(email, password, nickname);
+  const validationError = validateSignup({ email, password, passwordConfirm, nickname });
   if (validationError) return { error: validationError };
 
   const supabase = await createClient();

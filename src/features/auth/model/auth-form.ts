@@ -12,9 +12,19 @@ export const validateLogin = (email: string, password: string) => {
   return null;
 };
 
-export const validateSignup = (email: string, password: string, nickname: string) => {
+export const PASSWORD_MISMATCH_MESSAGE = "비밀번호가 서로 달라요.";
+
+type SignupInput = {
+  email: string;
+  password: string;
+  passwordConfirm: string;
+  nickname: string;
+};
+
+export const validateSignup = ({ email, password, passwordConfirm, nickname }: SignupInput) => {
   const loginError = validateLogin(email, password);
   if (loginError) return loginError;
+  if (password !== passwordConfirm) return PASSWORD_MISMATCH_MESSAGE;
 
   const trimmed = nickname.trim();
   if (trimmed.length < 1 || trimmed.length > 20) return "닉네임은 1~20자로 적어 주세요.";
