@@ -1,14 +1,11 @@
 import { notFound } from "next/navigation";
 
-import type { WorkoutDetail } from "@/entities/workout/model/contracts";
+import { getWorkoutDetail } from "@/entities/workout/api/server-queries";
 import { deleteWorkout, saveWorkout } from "@/features/workout/api/workout-actions";
 import { fromWorkoutDetail, getTodayInSeoul } from "@/features/workout/model/workout-form";
 import { requireUser } from "@/shared/api/supabase/require-user";
 import { WorkoutForm } from "@/widgets/workout-form";
 import { getWorkoutFormCrews } from "@/widgets/workout-form/api/get-form-crews";
-
-// TODO(A #18 병합 후): entities/workout/api/server-queries의 getWorkoutDetail로 바꾼다.
-const getWorkoutDetail = async (_workoutId: string): Promise<WorkoutDetail | null> => null;
 
 export async function EditWorkoutPage({ workoutId }: { workoutId: string }) {
   const { user } = await requireUser();
