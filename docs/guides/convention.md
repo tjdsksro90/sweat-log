@@ -10,7 +10,7 @@
 | 상수                 | `UPPER_SNAKE_CASE`         | `MAX_SETS`           |
 | 파일                 | `kebab-case`               | `workout-card.tsx`       |
 | 훅                   | `use-*.ts`                 | `use-workouts.ts`        |
-| 테스트               | 대상 파일명 + `.test.mjs`  | `workout-form.test.mjs`  |
+| 테스트               | 대상 파일명 + `.test.ts`   | `workout-form.test.ts`   |
 
 ## 컴포넌트
 
@@ -58,8 +58,8 @@ src/shared/     # 도메인에 의존하지 않는 공용 코드 (ui, lib, api)
 ## Imports
 
 - `@/` alias를 쓴다: `@/shared/ui/button`.
-- Node 테스트도 `pnpm test`의 alias loader를 통해 같은 `@/` alias를 사용한다.
-- 테스트하는 `model/` 파일은 `.tsx`가 섞인 slice의 `index.ts` 대신 순수 모듈 경로로 import한다. `node --test`는 JSX를 읽지 못한다.
+- 테스트(Vitest)도 `vitest.config.ts`의 별칭 설정으로 같은 `@/` alias를 사용한다.
+- 테스트는 `vitest`에서 `describe`, `it`, `expect`를 import해 쓴다.
 
 ## 주석
 
