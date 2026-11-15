@@ -22,17 +22,17 @@ const DOTS = { run: "bg-workout-run", strength: "bg-workout-strength", other: "b
 export function WorkoutListView({
   state,
   workouts,
-  hasMore,
+  nextCursor,
 }: {
   state: ListState;
   workouts: WorkoutListItem[];
-  hasMore: boolean;
+  nextCursor: string | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const navigate = (changes: Partial<ListState>) =>
-    startTransition(() => router.push(getListHref(state, { pages: 1, ...changes }), { scroll: false }));
+    startTransition(() => router.push(getListHref(state, { cursor: undefined, ...changes }), { scroll: false }));
   const visible = selectedDate ? workouts.filter((workout) => workout.workoutDate === selectedDate) : workouts;
   return (
     <div className="flex flex-col gap-6" aria-busy={pending}>
@@ -127,7 +127,7 @@ export function WorkoutListView({
           title={selectedDate ? "이날은 기록이 없어요" : "아직 기록이 없어요"}
           description="다른 날짜나 운동 종류를 선택하거나 오늘의 움직임을 남겨 보세요."
           action={
-            <Button render={<Link href="/workouts/new" />} nativeButton={false}>
+            <Button render={<Link href="/workouts/new" />} nativeButton={false} role="link">
               운동 기록하기
             </Button>
           }
@@ -144,8 +144,13 @@ export function WorkoutListView({
           </section>
         ))
       )}
-      {state.view === "timeline" && hasMore && state.pages < 99 && (
-        <Button variant="outline" disabled={pending} onClick={() => navigate({ pages: state.pages + 1 })}>
+      {state.view === "timeline" && state.cursor && (
+        <Button variant="ghost" onClick={() => navigate({ cursor: undefined })}>
+          최신 기록으로
+        </Button>
+      )}
+      {state.view === "timeline" && nextCursor && (
+        <Button variant="outline" disabled={pending} onClick={() => navigate({ cursor: nextCursor })}>
           더 보기
         </Button>
       )}

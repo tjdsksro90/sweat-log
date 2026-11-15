@@ -9,20 +9,20 @@ import { WorkoutListView } from "./workout-list-view";
 
 const push = vi.hoisted(() => vi.fn());
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
-const state: ListState = { kind: "all", month: "2026-11", pages: 1, view: "timeline" };
+const state: ListState = { kind: "all", month: "2026-11", view: "timeline" };
 
 describe("WorkoutListView", () => {
   it("종류 필터와 더 보기를 URL에 반영한다", async () => {
     const user = userEvent.setup();
-    render(<WorkoutListView state={state} workouts={SAMPLE_WORKOUTS.slice(0, 2)} hasMore />);
+    render(<WorkoutListView state={state} workouts={SAMPLE_WORKOUTS.slice(0, 2)} nextCursor="opaque_cursor" />);
     await user.click(screen.getByRole("button", { name: "러닝" }));
     expect(push).toHaveBeenLastCalledWith(expect.stringContaining("kind=run"), { scroll: false });
     await user.click(screen.getByRole("button", { name: "더 보기" }));
-    expect(push).toHaveBeenLastCalledWith(expect.stringContaining("pages=2"), { scroll: false });
+    expect(push).toHaveBeenLastCalledWith(expect.stringContaining("cursor=opaque_cursor"), { scroll: false });
   });
   it("달력에서 하루를 선택하고 전체 기록으로 돌아온다", async () => {
     const user = userEvent.setup();
-    render(<WorkoutListView state={{ ...state, view: "calendar" }} workouts={SAMPLE_WORKOUTS} hasMore={false} />);
+    render(<WorkoutListView state={{ ...state, view: "calendar" }} workouts={SAMPLE_WORKOUTS} nextCursor={null} />);
     await user.click(screen.getByRole("button", { name: "2026-11-14, 러닝" }));
     expect(screen.getByRole("link", { name: "한강 새벽 러닝" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "하체 데이" })).not.toBeInTheDocument();
