@@ -21,7 +21,7 @@ export const createCrew = async (_state: CrewFormState, formData: FormData): Pro
   if (error || typeof name !== "string") return { error };
   const result = await supabase.rpc("create_crew", { p_name: name.trim() });
   if (result.error) return { error: getCrewErrorMessage(result.error.message) };
-  revalidatePath("/crews", "layout");
+  revalidatePath("/", "layout");
   redirect(`/crews/${result.data.id}`);
 };
 
