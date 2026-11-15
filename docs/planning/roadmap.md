@@ -1,6 +1,6 @@
 # 땀일기 로드맵
 
-- 갱신일: 2026-11-13
+- 갱신일: 2026-11-15
 - 구현을 마친 항목은 체크하고, 자세한 이력은 Git과 PR에서 확인한다.
 
 ## 0단계: 뼈대 (완료)
@@ -13,7 +13,8 @@
 - [x] 기본 스키마와 RLS: `supabase/migrations/20261113000000_initial_schema.sql`
 - [x] 러닝 페이스·거리·시간 계산 유틸과 테스트
 - [x] 로컬 Supabase에서 마이그레이션 적용, 권한 검증(`supabase/tests/access-control.sql`), `pnpm db:types`로 타입 재생성
-- [ ] Supabase 클라우드 프로젝트 연결, Vercel 배포
+- [x] Supabase 클라우드 프로젝트 연결(서울 리전), Vercel 배포(`https://sweat-log-crew.vercel.app`)
+- [x] GitHub Actions CI(lint·typecheck·test)와 `main` 보호 규칙(PR·Squash 병합만, CI 통과 필수)
 
 ## 1단계: MVP 기능 (병렬 작업)
 
