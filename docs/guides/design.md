@@ -142,7 +142,7 @@ import { Textarea } from "@/shared/ui/textarea";
 </Field>
 ```
 
-`NumberInput`은 `type="text" inputMode="decimal"`이며 값은 문자열로 유지한다. 빈 값이나 `7.`처럼 입력 중인 값을 성급하게 숫자로 변환하지 않는다.
+`NumberInput`은 `type="text"`이며 `inputMode`는 `"decimal" | "numeric"`을 받는다. 기본값은 `"decimal"`이고, 횟수·시분초처럼 정수를 입력할 때는 `inputMode="numeric"`을 지정한다. 값은 문자열로 유지하며 빈 값이나 `7.`처럼 입력 중인 값을 성급하게 숫자로 변환하지 않는다.
 `inputMode`는 키패드 힌트이므로 유효성 검증이 아니다. 음수·정수·최대값 검증 및 단위 변환은 호출하는 기능에서 한다. `min`, `max`, `step`에 숫자 검증을 맡기지 않는다.
 `Input`은 이메일·비밀번호·일반 텍스트, `Textarea`는 여러 줄 메모에 쓴다. 입력 글자는 모바일 자동 확대를 피하도록 16px을 유지한다.
 
