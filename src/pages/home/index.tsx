@@ -1,21 +1,29 @@
+import Link from "next/link";
+
 import { getMyProfile } from "@/entities/profile/api/get-my-profile";
+import { getWeeklySummary } from "@/entities/workout/api/server-queries";
+import { Button } from "@/shared/ui/button";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
 
+import { WeeklySummaryCard } from "./ui/weekly-summary-card";
+
 export async function HomePage() {
-  const profile = await getMyProfile();
+  const [profile, summary] = await Promise.all([getMyProfile(), getWeeklySummary()]);
 
   return (
-    <PageLayout title="홈">
+    <PageLayout
+      title="홈"
+      action={
+        <Button render={<Link href="/workouts/new" />} nativeButton={false} role="link">
+          기록하기
+        </Button>
+      }
+    >
       <section className="flex flex-col gap-1">
         <p className="text-muted-foreground">안녕하세요,</p>
-        <p className="font-bold text-3xl">
-          {profile.nickname}님<span className="text-primary">.</span>
-        </p>
+        <p className="break-words font-bold text-3xl text-foreground">{profile.nickname}님.</p>
       </section>
-      <section className="rounded-xl border bg-card p-5 text-card-foreground">
-        <h2 className="font-semibold">이번 주 땀</h2>
-        <p className="mt-2 text-muted-foreground text-sm">기록을 남기면 이번 주 거리와 운동 횟수가 여기에 쌓여요.</p>
-      </section>
+      <WeeklySummaryCard summary={summary} />
     </PageLayout>
   );
 }
