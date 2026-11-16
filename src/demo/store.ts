@@ -315,18 +315,34 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
 
 export type DemoStore = ReturnType<typeof createDemoStore>;
 
-// 브라우저에서 첫 호출 때만 초기화한다. 테스트와 독립 세션은 팩터리를 사용한다.
-export const {
-  getWorkoutPage,
-  getWorkoutDetail,
-  getWeeklySummary,
-  getMyCrews,
-  getCrew,
-  getWorkoutFormCrews,
-  getWorkoutComments,
-  saveWorkout,
-  deleteWorkout,
-  createComment,
-  deleteComment,
-  reset,
-} = createDemoStore();
+// 공유 인스턴스는 서버 요청 사이에 상태가 섞이지 않도록 호출 시점에 차단한다.
+const sharedStore = createDemoStore();
+const assertBrowser = () => {
+  if (typeof window === "undefined") {
+    throw new Error(
+      "데모 공유 저장소는 브라우저에서만 사용할 수 있어요. 서버 테스트에서는 createDemoStore({ storage: () => null })을 사용하세요.",
+    );
+  }
+};
+const browserOnly =
+  <Args extends unknown[], Result>(action: (...args: Args) => Promise<Result>) =>
+  async (...args: Args): Promise<Result> => {
+    assertBrowser();
+    return action(...args);
+  };
+
+export const getWorkoutPage = browserOnly(sharedStore.getWorkoutPage);
+export const getWorkoutDetail = browserOnly(sharedStore.getWorkoutDetail);
+export const getWeeklySummary = browserOnly(sharedStore.getWeeklySummary);
+export const getMyCrews = browserOnly(sharedStore.getMyCrews);
+export const getCrew = browserOnly(sharedStore.getCrew);
+export const getWorkoutFormCrews = browserOnly(sharedStore.getWorkoutFormCrews);
+export const getWorkoutComments = browserOnly(sharedStore.getWorkoutComments);
+export const saveWorkout = browserOnly(sharedStore.saveWorkout);
+export const deleteWorkout = browserOnly(sharedStore.deleteWorkout);
+export const createComment = browserOnly(sharedStore.createComment);
+export const deleteComment = browserOnly(sharedStore.deleteComment);
+export const reset = (): void => {
+  assertBrowser();
+  sharedStore.reset();
+};
