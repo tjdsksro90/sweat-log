@@ -1,5 +1,5 @@
 import { getRunPacePreview, type RunFormValues } from "@/features/workout/model/workout-form";
-import type { WorkoutFormErrors } from "@/features/workout/model/workout-input";
+import { acceptDecimal2Input, type WorkoutFormErrors } from "@/features/workout/model/workout-input";
 import { NumberInput } from "@/shared/ui/number-input";
 import { Stat } from "@/shared/ui/stat";
 
@@ -27,7 +27,9 @@ export function RunDetail({
           <NumberInput
             {...control}
             value={run.distanceKm}
-            onChange={(event) => onChange({ ...run, distanceKm: event.target.value })}
+            onChange={(event) =>
+              onChange({ ...run, distanceKm: acceptDecimal2Input(event.target.value, run.distanceKm) })
+            }
             placeholder="5.00"
             autoComplete="off"
           />

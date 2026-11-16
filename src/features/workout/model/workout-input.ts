@@ -40,6 +40,15 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const INTEGER_PATTERN = /^\d+$/;
 // 소수 둘째 자리까지. 거리(km)와 무게(kg)가 같은 규칙이다.
 const DECIMAL_2_PATTERN = /^\d+(\.\d{1,2})?$/;
+// 입력 중에는 "", "5.", ".5" 같은 중간 상태도 받는다. 확정 검증은 DECIMAL_2_PATTERN이 한다.
+const DECIMAL_2_DRAFT_PATTERN = /^\d*(\.\d{0,2})?$/;
+
+/**
+ * 거리·무게 칸의 onChange에서 쓴다. 숫자와 소수 둘째 자리까지만 받고, 그 밖의 입력(셋째 자리, 문자,
+ * 둘째 자리를 넘는 붙여넣기)은 받지 않고 이전 값을 그대로 둔다.
+ */
+export const acceptDecimal2Input = (next: string, previous: string) =>
+  DECIMAL_2_DRAFT_PATTERN.test(next) ? next : previous;
 
 const isValidDate = (value: string) => {
   if (!DATE_PATTERN.test(value)) return false;
