@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { WorkoutComment } from "../model/comment";
 import type { CommentFormState } from "../model/comment-form";
+import type { LoadOlderComments, WorkoutCommentPage } from "../model/comment-page";
 import { WorkoutCommentsView } from "./workout-comments-view";
 
 const WORKOUT_ID = "a1234567-abcd-1234-abcd-123456789abc";
@@ -38,12 +39,19 @@ const COMMENTS: WorkoutComment[] = [
 type Action = (state: CommentFormState, formData: FormData) => Promise<CommentFormState>;
 const okAction = () => vi.fn<Action>(async () => ({ error: null, success: true }));
 
-const renderView = (comments: WorkoutComment[] | null, actions: { create?: Action; remove?: Action } = {}) =>
+const toPage = (comments: WorkoutComment[] | null): WorkoutCommentPage | null =>
+  comments && { comments, olderCursor: null, total: comments.length };
+
+const renderView = (
+  comments: WorkoutComment[] | null | WorkoutCommentPage,
+  actions: { create?: Action; remove?: Action; loadOlder?: LoadOlderComments } = {},
+) =>
   render(
     <WorkoutCommentsView
       workoutId={WORKOUT_ID}
-      comments={comments}
+      page={Array.isArray(comments) || comments === null ? toPage(comments) : comments}
       now={NOW}
+      loadOlder={actions.loadOlder ?? vi.fn<LoadOlderComments>()}
       createAction={actions.create ?? okAction()}
       deleteAction={actions.remove ?? okAction()}
     />,
@@ -123,5 +131,32 @@ describe("WorkoutCommentsView", () => {
     await user.click(screen.getByRole("button", { name: "삭제" }));
     await user.click(await screen.findByRole("button", { name: "삭제 확인" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("전체 개수는 목록과 따로 보여 주고, 이전 댓글을 위쪽에 이어 붙인다", async () => {
+    const user = userEvent.setup();
+    const older: WorkoutComment = { ...COMMENTS[0], id: "comment-0", body: "가장 오래된 댓글", isMine: true };
+    const loadOlder = vi
+      .fn<LoadOlderComments>()
+      .mockResolvedValueOnce({ ok: false })
+      .mockResolvedValueOnce({ ok: true, comments: [older], olderCursor: null });
+    const remove = okAction();
+    renderView({ comments: COMMENTS.slice(0, 1), olderCursor: "cursor-1", total: 1001 }, { loadOlder, remove });
+    expect(screen.getByRole("heading", { name: /응원 댓글/ })).toHaveTextContent("1001개");
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+
+    await user.click(screen.getByRole("button", { name: "이전 댓글 보기" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("이전 댓글을 불러오지 못했어요.");
+    await user.click(screen.getByRole("button", { name: "이전 댓글 보기" }));
+    await waitFor(() => expect(screen.getAllByRole("listitem")).toHaveLength(2));
+    expect(loadOlder).toHaveBeenLastCalledWith(WORKOUT_ID, "cursor-1");
+    expect(screen.getAllByRole("listitem")[0]).toHaveTextContent("가장 오래된 댓글");
+    expect(screen.queryByRole("button", { name: "이전 댓글 보기" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "삭제" }));
+    await user.click(await screen.findByRole("button", { name: "삭제 확인" }));
+    await waitFor(() => expect(screen.getAllByRole("listitem")).toHaveLength(1));
+    expect(remove.mock.calls[0][1].get("commentId")).toBe("comment-0");
   });
 });

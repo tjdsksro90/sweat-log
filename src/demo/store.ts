@@ -13,6 +13,13 @@ import type { DeleteWorkoutResult, SaveWorkoutResult } from "@/features/workout/
 import { getWorkoutErrorMessage, isUuid, parseWorkoutInput } from "@/features/workout/model/save-workout-input";
 import type { WorkoutComment } from "@/features/workout-comment/model/comment";
 import { type CommentFormState, validateCommentBody } from "@/features/workout-comment/model/comment-form";
+import {
+  compareComments,
+  decodeCommentCursor,
+  type OlderCommentsResult,
+  sliceComments,
+  type WorkoutCommentPage,
+} from "@/features/workout-comment/model/comment-page";
 import { toWorkoutFormCrews } from "@/widgets/workout-form/model/crews";
 import type { WorkoutFormCrew } from "@/widgets/workout-form/model/types";
 
@@ -189,11 +196,20 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
     id === DEMO_CREW.id ? structuredClone(DEMO_CREW) : null;
   const getWorkoutFormCrews = async (currentUserId: string = DEMO_USER.id): Promise<WorkoutFormCrew[]> =>
     toWorkoutFormCrews([DEMO_CREW], currentUserId);
-  const getWorkoutComments = async (workoutId: string): Promise<WorkoutComment[]> => {
-    if (!isUuid(workoutId)) return [];
-    return structuredClone(read().comments[workoutId] ?? [])
+  // 실제 앱처럼 최신 묶음과 전체 개수를 따로 주고, 이전 댓글은 커서로 이어서 준다.
+  const readComments = (workoutId: string): WorkoutComment[] =>
+    structuredClone(read().comments[workoutId] ?? [])
       .map((comment) => ({ ...comment, isMine: comment.userId === DEMO_USER.id }))
-      .sort((a, b) => compare(a.createdAt, b.createdAt) || compare(a.id, b.id));
+      .sort(compareComments);
+  const getWorkoutComments = async (workoutId: string): Promise<WorkoutCommentPage> => {
+    if (!isUuid(workoutId)) return { comments: [], olderCursor: null, total: 0 };
+    const comments = readComments(workoutId);
+    return { ...sliceComments(comments, null), total: comments.length };
+  };
+  const loadOlderComments = async (workoutId: string, cursor: string): Promise<OlderCommentsResult> => {
+    const decoded = decodeCommentCursor(cursor);
+    if (!isUuid(workoutId) || !decoded) return { ok: false };
+    return { ok: true, ...sliceComments(readComments(workoutId), decoded) };
   };
 
   const saveWorkout = async (input: WorkoutInput): Promise<SaveWorkoutResult> => {
@@ -306,6 +322,7 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
     getCrew,
     getWorkoutFormCrews,
     getWorkoutComments,
+    loadOlderComments,
     saveWorkout,
     deleteWorkout,
     createComment,
@@ -339,6 +356,7 @@ export const getMyCrews = browserOnly(sharedStore.getMyCrews);
 export const getCrew = browserOnly(sharedStore.getCrew);
 export const getWorkoutFormCrews = browserOnly(sharedStore.getWorkoutFormCrews);
 export const getWorkoutComments = browserOnly(sharedStore.getWorkoutComments);
+export const loadOlderComments = browserOnly(sharedStore.loadOlderComments);
 export const saveWorkout = browserOnly(sharedStore.saveWorkout);
 export const deleteWorkout = browserOnly(sharedStore.deleteWorkout);
 export const createComment = browserOnly(sharedStore.createComment);

@@ -10,6 +10,7 @@ import { createDemoStore, DEMO_STORAGE_KEY, type DemoStorage, type DemoStore } f
 
 const NOW = new Date("2026-11-16T00:00:00Z");
 const TODAY = getKstToday(NOW);
+const EMPTY_COMMENTS = { comments: [], olderCursor: null, total: 0 };
 const makeStore = () => createDemoStore({ now: () => NOW, storage: () => null });
 const input = (override: Partial<WorkoutInput> = {}): WorkoutInput => ({
   kind: "run",
@@ -66,7 +67,7 @@ describe("데모 조회와 페이지", () => {
     });
     expect(await store.getWorkoutDetail("없는 기록")).toBeNull();
     expect((await store.getWorkoutPage({ crewId: "없는 크루" })).items).toEqual([]);
-    expect(await store.getWorkoutComments("없는 기록")).toEqual([]);
+    expect(await store.getWorkoutComments("없는 기록")).toEqual(EMPTY_COMMENTS);
   });
 
   it.each(Array.from({ length: 7 }, (_, day) => day))("요일 %s에도 이번 주와 연속 기록이 채워진다", async (day) => {
@@ -185,7 +186,7 @@ describe("기록과 댓글 변경", () => {
     expect(await store.deleteWorkout(saved.id)).toEqual({ ok: true });
     expect(await store.getWorkoutDetail(saved.id)).toBeNull();
     expect((await allItems(store)).some((row) => row.id === saved.id)).toBe(false);
-    expect(await store.getWorkoutComments(saved.id)).toEqual([]);
+    expect(await store.getWorkoutComments(saved.id)).toEqual(EMPTY_COMMENTS);
     expect(await store.getWeeklySummary()).toEqual(baseline);
   });
 
@@ -245,7 +246,7 @@ describe("기록과 댓글 변경", () => {
       success: false,
       error: "댓글을 작성하지 못했어요. 기록을 볼 수 있는지 확인하고 다시 시도해 주세요.",
     });
-    expect(await store.getWorkoutComments(missingId)).toEqual([]);
+    expect(await store.getWorkoutComments(missingId)).toEqual(EMPTY_COMMENTS);
   });
 
   it("열람할 수 없는 기록에는 댓글을 작성하지 않는다", async () => {
@@ -259,20 +260,21 @@ describe("기록과 댓글 변경", () => {
     expect(
       await store.createComment(INITIAL_COMMENT_FORM_STATE, form({ workoutId: hidden.id, body: "응원해요" })),
     ).toEqual({ success: false, error: "댓글을 작성하지 못했어요. 기록을 볼 수 있는지 확인하고 다시 시도해 주세요." });
-    expect(await store.getWorkoutComments(hidden.id)).toEqual([]);
+    expect(await store.getWorkoutComments(hidden.id)).toEqual(EMPTY_COMMENTS);
   });
 
   it("댓글 작성·삭제 시 개수를 갱신하고 남의 댓글 삭제와 잘못된 입력을 거부한다", async () => {
     const store = makeStore();
     const workout = (await store.getWorkoutPage()).items.find((row) => row.commentCount > 0);
     if (!workout) throw new Error("샘플 댓글 없음");
-    const original = await store.getWorkoutComments(workout.id);
+    const original = (await store.getWorkoutComments(workout.id)).comments;
     expect(
       (await store.createComment(INITIAL_COMMENT_FORM_STATE, form({ workoutId: workout.id, body: "  좋아요!  " })))
         .success,
     ).toBe(true);
-    const comments = await store.getWorkoutComments(workout.id);
-    const mine = comments.find((comment) => comment.isMine);
+    const page = await store.getWorkoutComments(workout.id);
+    expect(page.total).toBe(original.length + 1);
+    const mine = page.comments.find((comment) => comment.isMine);
     expect(mine?.body).toBe("좋아요!");
     expect((await store.getWorkoutDetail(workout.id))?.commentCount).toBe(original.length + 1);
     expect((await store.getWorkoutPage()).items.find((row) => row.id === workout.id)?.commentCount).toBe(
@@ -305,8 +307,54 @@ describe("기록과 댓글 변경", () => {
         )
       ).success,
     ).toBe(true);
-    expect(await store.getWorkoutComments(workout.id)).toEqual(original);
+    expect((await store.getWorkoutComments(workout.id)).comments).toEqual(original);
     expect((await store.getWorkoutDetail(workout.id))?.commentCount).toBe(original.length);
+  });
+});
+
+describe("댓글 페이지 나누기", () => {
+  it("최신 50개와 전체 개수를 주고, 이전 댓글은 커서로 이어서 주며 새 댓글은 최신 묶음에 바로 보인다", async () => {
+    let clock = NOW.getTime();
+    const store = createDemoStore({ now: () => new Date(clock), storage: () => null });
+    const saved = await store.saveWorkout(input());
+    if (!saved.ok) throw new Error(saved.error);
+    const write = async (body: string) => {
+      clock += 1000;
+      const result = await store.createComment(INITIAL_COMMENT_FORM_STATE, form({ workoutId: saved.id, body }));
+      expect(result.success).toBe(true);
+    };
+    for (let index = 1; index <= 120; index++) await write(`댓글 ${index}`);
+
+    const latest = await store.getWorkoutComments(saved.id);
+    expect(latest.total).toBe(120);
+    expect(latest.comments.map((comment) => comment.body)).toEqual(
+      Array.from({ length: 50 }, (_, index) => `댓글 ${index + 71}`),
+    );
+    if (!latest.olderCursor) throw new Error("이전 댓글 커서 없음");
+
+    const second = await store.loadOlderComments(saved.id, latest.olderCursor);
+    if (!second.ok || !second.olderCursor) throw new Error("두 번째 묶음 없음");
+    expect(second.comments.map((comment) => comment.body)).toEqual(
+      Array.from({ length: 50 }, (_, index) => `댓글 ${index + 21}`),
+    );
+    const last = await store.loadOlderComments(saved.id, second.olderCursor);
+    expect(last).toMatchObject({ ok: true, olderCursor: null });
+    expect(last.ok && last.comments.map((comment) => comment.body)).toEqual(
+      Array.from({ length: 20 }, (_, index) => `댓글 ${index + 1}`),
+    );
+
+    await write("방금 쓴 댓글");
+    const refreshed = await store.getWorkoutComments(saved.id);
+    expect(refreshed.total).toBe(121);
+    expect(refreshed.comments.at(-1)?.body).toBe("방금 쓴 댓글");
+    expect(refreshed.comments).toHaveLength(50);
+  });
+
+  it("망가진 커서와 잘못된 기록 ID는 거부한다", async () => {
+    const store = makeStore();
+    const workout = (await store.getWorkoutPage()).items[0];
+    expect(await store.loadOlderComments(workout.id, "망가진 커서")).toEqual({ ok: false });
+    expect(await store.loadOlderComments("invalid", "망가진 커서")).toEqual({ ok: false });
   });
 });
 
