@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { login, signup } from "@/features/auth";
 
 import { AuthForm } from "./auth-form";
@@ -6,6 +8,14 @@ export function LoginPage() {
   return (
     <AuthLayout subtitle="오늘 흘린 땀을 기록해요">
       <AuthForm action={login} mode="login" />
+      <p className="-mt-6 text-center text-muted-foreground text-sm">
+        <Link
+          className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-4"
+          href="/demo"
+        >
+          가입 없이 둘러보기
+        </Link>
+      </p>
     </AuthLayout>
   );
 }
