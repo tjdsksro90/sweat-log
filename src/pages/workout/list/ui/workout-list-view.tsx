@@ -2,12 +2,10 @@
 
 import { useState, useTransition } from "react";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-
 import type { WorkoutListItem } from "@/entities/workout/model/contracts";
 import { WORKOUT_KIND_LABELS, WORKOUT_KINDS } from "@/entities/workout/model/types";
 import { WorkoutCard } from "@/entities/workout/ui/workout-card";
+import { AppLink, useAppRouter } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
 import { FilterChip } from "@/shared/ui/chip";
 import { EmptyState } from "@/shared/ui/empty-state";
@@ -28,7 +26,7 @@ export function WorkoutListView({
   workouts: WorkoutListItem[];
   nextCursor: string | null;
 }) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [pending, startTransition] = useTransition();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const navigate = (changes: Partial<ListState>) =>
@@ -127,7 +125,7 @@ export function WorkoutListView({
           title={selectedDate ? "이날은 기록이 없어요" : "아직 기록이 없어요"}
           description="다른 날짜나 운동 종류를 선택하거나 오늘의 움직임을 남겨 보세요."
           action={
-            <Button render={<Link href={getNewWorkoutHref(state.kind)} />} nativeButton={false} role="link">
+            <Button render={<AppLink href={getNewWorkoutHref(state.kind)} />} nativeButton={false} role="link">
               운동 기록하기
             </Button>
           }

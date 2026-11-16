@@ -1,9 +1,8 @@
 "use client";
 
 import { CalendarDotsIcon, GearSixIcon, HouseIcon, type Icon, UsersThreeIcon } from "@phosphor-icons/react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 
+import { AppLink, useAppPathname } from "@/shared/lib/app-navigation";
 import { cn } from "@/shared/lib/utils";
 
 const TABS: { href: string; label: string; icon: Icon }[] = [
@@ -17,7 +16,7 @@ const isActiveTab = (pathname: string, href: string) =>
   href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 
 export function BottomNavigation() {
-  const pathname = usePathname() ?? "/";
+  const pathname = useAppPathname();
 
   return (
     <nav
@@ -30,7 +29,7 @@ export function BottomNavigation() {
 
           return (
             <li key={href}>
-              <Link
+              <AppLink
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
                   "flex h-16 flex-col items-center justify-center gap-1 text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
@@ -45,7 +44,7 @@ export function BottomNavigation() {
                   weight={isActive ? "fill" : "regular"}
                 />
                 {label}
-              </Link>
+              </AppLink>
             </li>
           );
         })}

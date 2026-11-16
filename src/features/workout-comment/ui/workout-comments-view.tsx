@@ -3,12 +3,10 @@ import { ChatCircleIcon } from "@phosphor-icons/react/ssr";
 import { EmptyState } from "@/shared/ui/empty-state";
 
 import type { WorkoutComment } from "../model/comment";
-import type { CommentFormState } from "../model/comment-form";
+import type { CommentAction } from "../model/comment-form";
 import { formatCommentTime } from "../model/comment-time";
 import { CommentForm } from "./comment-form";
 import { DeleteComment } from "./delete-comment";
-
-type CommentAction = (state: CommentFormState, formData: FormData) => Promise<CommentFormState>;
 
 type WorkoutCommentsViewProps = {
   workoutId: string;

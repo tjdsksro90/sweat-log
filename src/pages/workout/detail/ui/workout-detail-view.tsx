@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
 
-import Link from "next/link";
-
 import type { WorkoutDetail } from "@/entities/workout/model/contracts";
 import { WORKOUT_KIND_LABELS } from "@/entities/workout/model/types";
 import { WorkoutMetrics } from "@/entities/workout/ui/workout-card";
+import { AppLink } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Chip } from "@/shared/ui/chip";
@@ -15,7 +14,7 @@ export function WorkoutDetailView({ workout, comments }: { workout: WorkoutDetai
       <Button
         className="self-start"
         variant="ghost"
-        render={<Link href="/workouts" />}
+        render={<AppLink href="/workouts" />}
         nativeButton={false}
         role="link"
       >
@@ -92,7 +91,7 @@ export function WorkoutDetailView({ workout, comments }: { workout: WorkoutDetai
         <Button
           className="self-start"
           variant="outline"
-          render={<Link href={`/workouts/${workout.id}/edit`} />}
+          render={<AppLink href={`/workouts/${workout.id}/edit`} />}
           nativeButton={false}
           role="link"
         >

@@ -1,8 +1,7 @@
-import Link from "next/link";
-
 import type { WorkoutListItem } from "@/entities/workout/model/contracts";
 import { formatDistance, formatDuration, formatPace, getPaceSecondsPerKm } from "@/entities/workout/model/pace";
 import { WORKOUT_KIND_LABELS } from "@/entities/workout/model/types";
+import { AppLink } from "@/shared/lib/app-navigation";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Chip } from "@/shared/ui/chip";
 import { Stat } from "@/shared/ui/stat";
@@ -18,12 +17,12 @@ export function WorkoutCard({ workout }: { workout: WorkoutListItem }) {
           </time>
         </div>
         <h3 className="break-words font-semibold text-title">
-          <Link
+          <AppLink
             className="inline-flex min-h-11 items-center rounded-md underline-offset-4 hover:underline focus-visible:outline-2"
             href={`/workouts/${workout.id}`}
           >
             {workout.title || `${WORKOUT_KIND_LABELS[workout.kind]} 기록`}
-          </Link>
+          </AppLink>
         </h3>
         <p className="break-words text-caption text-muted-foreground">
           {workout.author.nickname} · {workout.placeName || "장소 미입력"}

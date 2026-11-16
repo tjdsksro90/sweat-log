@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createWorkoutFormValues } from "@/features/workout/model/workout-form";
+import { type AppNavigation, AppNavigationProvider } from "@/shared/lib/app-navigation";
 import type { WorkoutFormCrew } from "@/widgets/workout-form/model/types";
 import { WorkoutForm } from "@/widgets/workout-form/ui/workout-form";
 
@@ -94,5 +95,76 @@ describe("WorkoutForm", () => {
 
     await user.click(await screen.findByRole("button", { name: "나가기" }));
     expect(router.push).toHaveBeenCalledWith("/workouts");
+  });
+});
+
+describe("WorkoutForm 이동 주입", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const navigation = (): AppNavigation => ({
+    pathname: "/workouts/new",
+    push: vi.fn(),
+    replace: vi.fn(),
+    toHref: (path) => `/demo/app?path=${encodeURIComponent(path)}`,
+  });
+
+  it("provider가 있으면 저장·닫기 이동을 provider에 맡긴다", async () => {
+    const value = navigation();
+    const user = userEvent.setup();
+    render(
+      <AppNavigationProvider value={value}>
+        <WorkoutForm
+          title="기록하기"
+          initialValues={createWorkoutFormValues(TODAY)}
+          crews={[]}
+          today={TODAY}
+          closeHref="/workouts"
+          saveWorkout={vi.fn().mockResolvedValue({ id: "new-id", ok: true })}
+        />
+      </AppNavigationProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "닫기" }));
+    expect(value.push).toHaveBeenCalledWith("/workouts");
+
+    await user.click(screen.getByRole("button", { name: "기타" }));
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.type(screen.getByLabelText("분"), "30");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "기록 저장" }));
+
+    expect(value.replace).toHaveBeenCalledWith("/workouts/new-id");
+    expect(router.replace).not.toHaveBeenCalled();
+    expect(router.push).not.toHaveBeenCalled();
+  });
+
+  it("작성 중 링크를 누르면 확인을 받고, 나가기를 고르면 같은 링크를 다시 눌러 이동한다", async () => {
+    const user = userEvent.setup();
+    const follow = vi.fn((event: { preventDefault: () => void }) => event.preventDefault());
+    render(
+      <>
+        <a href="/crews" onClick={follow}>
+          크루
+        </a>
+        <WorkoutForm
+          title="기록하기"
+          initialValues={createWorkoutFormValues(TODAY)}
+          crews={[]}
+          today={TODAY}
+          closeHref="/workouts"
+          saveWorkout={vi.fn()}
+        />
+      </>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "헬스" }));
+    await user.click(screen.getByRole("link", { name: "크루" }));
+    expect(follow).not.toHaveBeenCalled();
+
+    await user.click(await screen.findByRole("button", { name: "나가기" }));
+    expect(follow).toHaveBeenCalledOnce();
+    expect(router.push).not.toHaveBeenCalled();
   });
 });

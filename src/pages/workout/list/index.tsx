@@ -1,13 +1,9 @@
-import Link from "next/link";
-
 import { getWorkoutPage } from "@/entities/workout/api/server-queries";
 import { getKstToday } from "@/entities/workout/model/weekly-summary";
-import { Button } from "@/shared/ui/button";
-import { PageLayout } from "@/shared/ui/layouts/page-layout";
 
 import { getMonthRange } from "./model/calendar";
-import { getNewWorkoutHref, parseListState, type SearchParams } from "./model/filters";
-import { WorkoutListView } from "./ui/workout-list-view";
+import { parseListState, type SearchParams } from "./model/filters";
+import { WorkoutListScreen } from "./ui/workout-list-screen";
 
 export async function WorkoutListPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const currentMonth = getKstToday().slice(0, 7);
@@ -22,21 +18,5 @@ export async function WorkoutListPage({ searchParams }: { searchParams: Promise<
     page = await getWorkoutPage({ ...filter, cursor: page.nextCursor });
     items.push(...page.items);
   }
-  return (
-    <PageLayout
-      title="기록"
-      action={
-        <Button render={<Link href={getNewWorkoutHref(state.kind)} />} nativeButton={false} role="link">
-          기록하기
-        </Button>
-      }
-    >
-      <WorkoutListView
-        key={`${state.view}-${state.kind}-${state.month}-${state.cursor ?? ""}`}
-        state={state}
-        workouts={items}
-        nextCursor={page.nextCursor}
-      />
-    </PageLayout>
-  );
+  return <WorkoutListScreen state={state} workouts={items} nextCursor={page.nextCursor} />;
 }
