@@ -8,6 +8,24 @@ import { createSampleData, DEMO_CREW, DEMO_USER } from "./sample-data";
 
 describe("데모 샘플", () => {
   it.each([
+    "2026-11-15T15:00:00Z",
+    "2026-11-15T23:59:59Z",
+    "2026-11-16T00:30:00Z",
+    "2026-11-16T14:59:59Z",
+  ])("한국 자정과 오전에도 기록·댓글이 미래에 생성되지 않는다: %s", (instant) => {
+    const now = new Date(instant);
+    const sample = createSampleData(now);
+    for (const row of sample.workouts) {
+      expect(Date.parse(row.created_at)).toBeLessThanOrEqual(now.getTime());
+      for (const comment of sample.comments[row.id] ?? []) {
+        expect(Date.parse(comment.createdAt)).toBeGreaterThanOrEqual(Date.parse(row.created_at));
+        expect(Date.parse(comment.createdAt)).toBeLessThanOrEqual(now.getTime());
+      }
+    }
+    expect(sample.workouts.some((row) => row.workout_date === getKstToday(now))).toBe(true);
+  });
+
+  it.each([
     ["2026-11-15T14:59:59Z", "2026-11-15"],
     ["2026-11-15T15:00:00Z", "2026-11-16"],
     ["2026-12-31T15:00:00Z", "2027-01-01"],

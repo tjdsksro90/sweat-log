@@ -27,6 +27,7 @@ export type DemoState = {
 
 // UUID 모양을 유지해야 실제 커서와 폼 검증을 그대로 쓸 수 있다.
 const sampleId = (prefix: string, index: number) => `${prefix}-0000-4000-8000-${String(index + 1).padStart(12, "0")}`;
+const HOUR_MS = 60 * 60 * 1000;
 
 export const createSampleData = (now: Date = new Date()): DemoState => {
   const today = getKstToday(now);
@@ -47,7 +48,7 @@ export const createSampleData = (now: Date = new Date()): DemoState => {
       place_name: kind === "run" ? "한강공원" : kind === "strength" ? "동네 헬스장" : "집",
       memo: "운동을 마치니 기분이 좋아요. 내일도 조금씩!",
       duration_seconds: kind === "run" ? null : kind === "strength" ? 3600 : 1200,
-      created_at: `${workoutDate}T00:00:00.000Z`,
+      created_at: new Date(now.getTime() - (day * 24 + 2) * HOUR_MS).toISOString(),
       user_id: DEMO_USER.id,
       author: { ...DEMO_USER },
       crew: { id: DEMO_CREW.id, name: DEMO_CREW.name },
@@ -71,7 +72,7 @@ export const createSampleData = (now: Date = new Date()): DemoState => {
           userId: DEMO_CREW.members[day + 1].userId,
           nickname: DEMO_CREW.members[day + 1].nickname,
           body: ["오늘도 수고했어!", "꾸준히 하는 모습 멋지다!", "다음엔 같이 하자!"][day],
-          createdAt: `${workoutDate}T01:00:00.000Z`,
+          createdAt: new Date(now.getTime() - (day * 24 + 1) * HOUR_MS).toISOString(),
           isMine: false,
         },
       ];
