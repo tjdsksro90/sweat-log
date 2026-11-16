@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { ServiceWorkerRegistration } from "@/app/service-worker-registration";
 import { requireUser } from "@/shared/api/supabase/require-user";
 import { BottomNavigation } from "@/widgets/bottom-navigation";
 
@@ -10,6 +11,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <>
       {children}
       <BottomNavigation />
+      <ServiceWorkerRegistration />
     </>
   );
 }
