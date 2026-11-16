@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { WeeklySummary, WorkoutDetail, WorkoutListFilter, WorkoutPage } from "@/entities/workout/model/contracts";
+import { RUNNING_STATS_MONTHS, type RunningStats, toRunningStats } from "@/entities/workout/model/running-stats";
 import { addDays, buildWeeklySummary, getKstToday, getWeekStart } from "@/entities/workout/model/weekly-summary";
 import { decodeWorkoutCursor, encodeWorkoutCursor } from "@/entities/workout/model/workout-cursor";
 import { toWorkoutDetail, toWorkoutListItem } from "@/entities/workout/model/workout-mappers";
@@ -100,5 +101,29 @@ export const getWeeklySummary = async (today: string = getKstToday()): Promise<W
     today,
     weekWorkouts: week.data,
     streakDays: streak.data,
+  });
+};
+
+/**
+ * 러닝 통계. 내가 작성했거나 함께한 친구로 들어간 러닝만 DB 함수가 집계한다(행 제한에 잘리지 않게).
+ * hasWorkouts는 종류와 상관없이 내 기록이 있는지로, 빈 상태 문구를 고르는 데만 쓴다.
+ */
+export const getRunningStats = async (today: string = getKstToday()): Promise<RunningStats> => {
+  const { supabase } = await requireUser();
+
+  const [months, records, anyWorkout] = await Promise.all([
+    supabase.rpc("get_running_monthly_distance", { p_today: today, p_months: RUNNING_STATS_MONTHS }),
+    supabase.rpc("get_running_records", { p_today: today }),
+    supabase.rpc("list_workouts", {}).select("id").limit(1),
+  ]);
+
+  if (months.error) throw months.error;
+  if (records.error) throw records.error;
+  if (anyWorkout.error) throw anyWorkout.error;
+
+  return toRunningStats({
+    hasWorkouts: anyWorkout.data.length > 0,
+    monthRows: months.data,
+    recordRows: records.data,
   });
 };

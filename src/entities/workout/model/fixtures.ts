@@ -3,6 +3,7 @@
  * 그리고 테스트에서 쓴다. 실제 화면 코드에서 이 파일을 import한 채로 PR을 올리지 않는다.
  */
 import type { WeeklySummary, WorkoutDetail, WorkoutListItem } from "./contracts";
+import { getRecentMonths, type RunningStats } from "./running-stats";
 
 const MINSU = { id: "00000000-0000-0000-0000-00000000000a", nickname: "민수" };
 const JIEUN = { id: "00000000-0000-0000-0000-00000000000b", nickname: "지은" };
@@ -85,4 +86,21 @@ export const SAMPLE_WEEKLY_SUMMARY: WeeklySummary = {
   strengthVolumeKg: 3720,
   streakDays: 2,
   activeDates: ["2026-11-11", "2026-11-13", "2026-11-14"],
+};
+
+// 2026년 11월 기준. 10km 이상 러닝은 아직 없다.
+export const SAMPLE_RUNNING_STATS: RunningStats = {
+  hasWorkouts: true,
+  months: getRecentMonths("2026-11-16").map((month, index) => ({
+    month,
+    distanceMeters: index === 11 ? 12800 : index === 8 ? 30500 : index % 3 === 0 ? 0 : 8000 + index * 1000,
+    runCount: index === 11 ? 3 : index === 8 ? 6 : index % 3 === 0 ? 0 : 2,
+  })),
+  records: {
+    bestPace: { workoutId: "run-best", workoutDate: "2026-11-11", distanceMeters: 3000, durationSeconds: 840 },
+    bestPace5k: { workoutId: "run-5k", workoutDate: "2026-08-03", distanceMeters: 5200, durationSeconds: 1560 },
+    bestPace10k: null,
+    longestDistance: { workoutId: "run-long", workoutDate: "2026-08-24", distanceMeters: 9100, durationSeconds: 3300 },
+    longestDuration: { workoutId: "run-long", workoutDate: "2026-08-24", distanceMeters: 9100, durationSeconds: 3300 },
+  },
 };
