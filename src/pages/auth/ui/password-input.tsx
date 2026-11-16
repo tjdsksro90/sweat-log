@@ -15,7 +15,12 @@ export function PasswordInput({ className, ...props }: PasswordInputProps) {
 
   return (
     <div className="relative">
-      <Input {...props} className={cn("pr-12", className)} type={isVisible ? "text" : "password"} />
+      {/* Edge가 칸 안에 띄우는 기본 보기·지우기 아이콘이 우리 토글과 겹치지 않게 숨긴다. */}
+      <Input
+        {...props}
+        className={cn("pr-12 [&::-ms-clear]:hidden [&::-ms-reveal]:hidden", className)}
+        type={isVisible ? "text" : "password"}
+      />
       <button
         aria-label={isVisible ? "비밀번호 숨기기" : "비밀번호 보기"}
         aria-pressed={isVisible}
