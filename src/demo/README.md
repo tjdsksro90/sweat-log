@@ -14,6 +14,7 @@
 | `getWorkoutPage` | `filter?: WorkoutListFilter` | `Promise<WorkoutPage>` |
 | `getWorkoutDetail` | `id: string` | `Promise<WorkoutDetail \| null>` |
 | `getWeeklySummary` | `today?: string` (한국 날짜 `YYYY-MM-DD`) | `Promise<WeeklySummary>` |
+| `getRunningStats` | `today?: string` (한국 날짜 `YYYY-MM-DD`) | `Promise<RunningStats>` |
 | `getMyCrews` | 없음 | `Promise<CrewSummary[]>` |
 | `getCrew` | `id: string` | `Promise<CrewDetail \| null>` |
 | `getWorkoutFormCrews` | `currentUserId?: string` (기본값 `DEMO_USER.id`) | `Promise<WorkoutFormCrew[]>` |
@@ -26,7 +27,7 @@
 | `createDemoStore` | `options?: DemoStoreOptions` (`now?: () => Date`, `storage?: () => DemoStorage \| null`) | `DemoStore` |
 | `createSampleData` | `now?: Date` | `DemoState` |
 
-목록은 실제 API처럼 20개씩 날짜·작성 시각·ID 내림차순으로 반환한다. 기본 목록은 내 기록과 동행 기록이며, `crewId`를 지정하면 크루 공유 기록이다. 주간 요약은 내가 작성한 기록만 집계한다. 수정·삭제는 본인 기록과 댓글에만 허용한다.
+목록은 실제 API처럼 20개씩 날짜·작성 시각·ID 내림차순으로 반환한다. 기본 목록은 내 기록과 동행 기록이며, `crewId`를 지정하면 크루 공유 기록이다. 주간 요약은 내가 작성한 기록만 집계한다. 러닝 통계는 실제 앱처럼 내가 작성했거나 함께한 러닝을 `buildRunningStats`로 집계한다. 수정·삭제는 본인 기록과 댓글에만 허용한다.
 
 날짜·커서·목록/상세 매핑·주간 합계·입력 검증·폼 크루 변환은 기존 순수 함수를 재사용한다. 실제 Server Action 모듈에서는 타입만 가져온다.
 

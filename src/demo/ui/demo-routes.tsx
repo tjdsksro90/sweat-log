@@ -83,7 +83,10 @@ export function DemoRoutes({ location }: { location: DemoLocation }) {
 
 function DemoHome() {
   const { data: summary } = useDemoQuery(["summary"], () => store.getWeeklySummary());
-  return summary ? <HomeScreen nickname={DEMO_USER.nickname} summary={summary} /> : null;
+  const { data: runningStats } = useDemoQuery(["running-stats"], () => store.getRunningStats());
+  return summary && runningStats ? (
+    <HomeScreen nickname={DEMO_USER.nickname} summary={summary} runningStats={runningStats} />
+  ) : null;
 }
 
 function DemoWorkoutList({ searchParams }: { searchParams: SearchParams }) {
