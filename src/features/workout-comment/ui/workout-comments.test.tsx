@@ -1,35 +1,58 @@
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 
-import { getWorkoutComments } from "../api/queries";
+import type { WorkoutComment } from "../model/comment";
+import type { CommentAction } from "../model/comment-form";
 import { WorkoutComments } from "./workout-comments";
-
-vi.mock("../api/queries", () => ({ getWorkoutComments: vi.fn() }));
-vi.mock("../api/comment-actions", () => ({ createComment: vi.fn(), deleteComment: vi.fn() }));
 
 const WORKOUT_ID = "a1234567-abcd-1234-abcd-123456789abc";
 
-describe("WorkoutComments 조회 연결", () => {
-  beforeEach(() => vi.clearAllMocks());
+const renderComments = async (
+  loadComments: (workoutId: string) => Promise<WorkoutComment[]>,
+  createAction: CommentAction = vi.fn<CommentAction>(),
+) =>
+  render(
+    await WorkoutComments({ workoutId: WORKOUT_ID, loadComments, createAction, deleteAction: vi.fn<CommentAction>() }),
+  );
 
-  it("기록 ID로 댓글을 조회해 보여 준다", async () => {
-    vi.mocked(getWorkoutComments).mockResolvedValue([
+describe("WorkoutComments 조회 연결", () => {
+  it("넘겨받은 조회 함수로 기록의 댓글을 불러와 보여 준다", async () => {
+    const loadComments = vi.fn(async () => [
       { id: "c1", userId: "u1", nickname: "친구", body: "멋져요", createdAt: new Date().toISOString(), isMine: false },
     ]);
-    render(await WorkoutComments({ workoutId: WORKOUT_ID }));
-    expect(getWorkoutComments).toHaveBeenCalledWith(WORKOUT_ID);
+    await renderComments(loadComments);
+    expect(loadComments).toHaveBeenCalledWith(WORKOUT_ID);
     expect(screen.getByText("멋져요")).toBeInTheDocument();
   });
 
+  it("넘겨받은 작성 함수로 댓글을 보낸다", async () => {
+    const user = userEvent.setup();
+    const createAction = vi.fn<CommentAction>(async () => ({ error: null, success: true }));
+    await renderComments(async () => [], createAction);
+    await user.type(screen.getByRole("textbox", { name: "댓글 남기기" }), "응원해요");
+    await user.click(screen.getByRole("button", { name: "댓글 남기기" }));
+    expect(createAction.mock.calls[0][1].get("workoutId")).toBe(WORKOUT_ID);
+  });
+
   it("조회 실패는 화면 안에서 안내한다", async () => {
-    vi.mocked(getWorkoutComments).mockRejectedValue(new Error("조회 실패"));
-    render(await WorkoutComments({ workoutId: WORKOUT_ID }));
+    await renderComments(async () => {
+      throw new Error("조회 실패");
+    });
     expect(screen.getByRole("alert")).toHaveTextContent("댓글을 불러오지 못했어요.");
   });
 
   it("로그인 이동 같은 Next.js 흐름은 삼키지 않는다", async () => {
     const redirect = Object.assign(new Error("NEXT_REDIRECT"), { digest: "NEXT_REDIRECT;replace;/login;307;" });
-    vi.mocked(getWorkoutComments).mockRejectedValue(redirect);
-    await expect(WorkoutComments({ workoutId: WORKOUT_ID })).rejects.toBe(redirect);
+    await expect(
+      WorkoutComments({
+        workoutId: WORKOUT_ID,
+        loadComments: async () => {
+          throw redirect;
+        },
+        createAction: vi.fn<CommentAction>(),
+        deleteAction: vi.fn<CommentAction>(),
+      }),
+    ).rejects.toBe(redirect);
   });
 });

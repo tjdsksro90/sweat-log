@@ -1,5 +1,8 @@
 export type CommentFormState = { error: string | null; success: boolean };
 
+// 댓글 작성·삭제 함수의 모양. 실제 앱은 Server Action을, 체험 데모는 가짜 저장소 함수를 넘긴다.
+export type CommentAction = (state: CommentFormState, formData: FormData) => Promise<CommentFormState>;
+
 export const INITIAL_COMMENT_FORM_STATE: CommentFormState = { error: null, success: false };
 
 export const MAX_COMMENT_LENGTH = 500;

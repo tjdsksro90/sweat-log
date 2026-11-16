@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
 import { getWorkoutDetail } from "@/entities/workout/api/server-queries";
+import { createComment, deleteComment } from "@/features/workout-comment/api/comment-actions";
+import { getWorkoutComments } from "@/features/workout-comment/api/queries";
 import { WorkoutComments } from "@/features/workout-comment/ui/workout-comments";
 import { WorkoutCommentsLoading } from "@/features/workout-comment/ui/workout-comments-loading";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
@@ -19,7 +21,12 @@ export async function WorkoutDetailPage({ params }: { params: Promise<{ workoutI
         workout={workout}
         comments={
           <Suspense fallback={<WorkoutCommentsLoading />}>
-            <WorkoutComments workoutId={workout.id} />
+            <WorkoutComments
+              workoutId={workout.id}
+              loadComments={getWorkoutComments}
+              createAction={createComment}
+              deleteAction={deleteComment}
+            />
           </Suspense>
         }
       />
