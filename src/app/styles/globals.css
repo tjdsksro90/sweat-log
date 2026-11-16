@@ -9,8 +9,7 @@
 @source not "../../../docs";
 @source not "../../../.agents";
 
-/* 화면 모드 선택 기능을 만들기 전까지는 기기 설정(prefers-color-scheme)을 따른다. */
-@custom-variant dark (@media (prefers-color-scheme: dark));
+@custom-variant dark (&:where(.dark, .dark *));
 
 /**
  * 색 토큰은 여기서만 값을 가진다. 컴포넌트는 `bg-primary`, `text-muted-foreground` 같은
@@ -51,8 +50,39 @@
   --workout-other: oklch(0.6 0.12 250);
 }
 
+:root.dark {
+  color-scheme: dark;
+  --background: oklch(0.15 0.005 120);
+  --foreground: oklch(0.96 0.005 120);
+  --surface: oklch(0.2 0.005 120);
+  --card: oklch(0.2 0.005 120);
+  --card-foreground: oklch(0.96 0.005 120);
+  --popover: oklch(0.22 0.005 120);
+  --popover-foreground: oklch(0.96 0.005 120);
+
+  --primary: oklch(0.88 0.2 125);
+  --primary-foreground: oklch(0.18 0.02 125);
+  --secondary: oklch(0.26 0.005 120);
+  --secondary-foreground: oklch(0.96 0.005 120);
+  --muted: oklch(0.26 0.005 120);
+  --muted-foreground: oklch(0.7 0.01 120);
+  --accent: oklch(0.28 0.03 125);
+  --accent-foreground: oklch(0.96 0.005 120);
+  --destructive: oklch(0.68 0.19 25);
+  --success: oklch(0.75 0.17 145);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.88 0.2 125);
+
+  --workout-run: oklch(0.88 0.2 125);
+  --workout-strength: oklch(0.72 0.17 30);
+  --workout-other: oklch(0.72 0.12 250);
+}
+
+/* JS가 꺼졌거나 초기 스크립트가 아직 실행되지 않았을 때는 기기 설정을 따른다. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light) {
+    color-scheme: dark;
     --background: oklch(0.15 0.005 120);
     --foreground: oklch(0.96 0.005 120);
     --surface: oklch(0.2 0.005 120);
@@ -131,7 +161,7 @@
   }
 
   html {
-    color-scheme: light dark;
+    color-scheme: light;
     -webkit-tap-highlight-color: transparent;
   }
 
