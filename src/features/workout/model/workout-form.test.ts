@@ -33,6 +33,10 @@ describe("workout-form", () => {
     expect(values.exercises[0].sets.length).toBe(1);
   });
 
+  it("목록에서 고른 종류가 있으면 그 종류로 시작한다", () => {
+    expect(createWorkoutFormValues("2026-11-15", "strength").kind).toBe("strength");
+  });
+
   it("새 세트는 직전 세트의 무게와 횟수를 복사한다", () => {
     let values = createWorkoutFormValues("2026-11-15");
     const exercise = values.exercises[0];

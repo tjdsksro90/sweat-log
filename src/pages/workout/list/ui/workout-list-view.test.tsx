@@ -31,4 +31,8 @@ describe("WorkoutListView", () => {
     await user.click(screen.getByRole("button", { name: "2026-11-15, 운동 없음" }));
     expect(screen.getByText("이날은 기록이 없어요")).toBeInTheDocument();
   });
+  it("빈 목록의 운동 기록하기는 고른 종류를 작성 화면에 넘긴다", () => {
+    render(<WorkoutListView state={{ ...state, kind: "strength" }} workouts={[]} nextCursor={null} />);
+    expect(screen.getByRole("link", { name: "운동 기록하기" })).toHaveAttribute("href", "/workouts/new?kind=strength");
+  });
 });

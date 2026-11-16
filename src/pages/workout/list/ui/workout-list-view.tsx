@@ -14,7 +14,7 @@ import { EmptyState } from "@/shared/ui/empty-state";
 import { SegmentedControl } from "@/shared/ui/segmented-control";
 
 import { buildMonthCalendar } from "../model/calendar";
-import { getListHref, type ListState, shiftMonth } from "../model/filters";
+import { getListHref, getNewWorkoutHref, type ListState, shiftMonth } from "../model/filters";
 import { groupWorkoutsByDate } from "../model/timeline";
 
 const DOTS = { run: "bg-workout-run", strength: "bg-workout-strength", other: "bg-workout-other" };
@@ -127,7 +127,7 @@ export function WorkoutListView({
           title={selectedDate ? "이날은 기록이 없어요" : "아직 기록이 없어요"}
           description="다른 날짜나 운동 종류를 선택하거나 오늘의 움직임을 남겨 보세요."
           action={
-            <Button render={<Link href="/workouts/new" />} nativeButton={false} role="link">
+            <Button render={<Link href={getNewWorkoutHref(state.kind)} />} nativeButton={false} role="link">
               운동 기록하기
             </Button>
           }

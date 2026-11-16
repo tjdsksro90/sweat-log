@@ -6,7 +6,7 @@ import { Button } from "@/shared/ui/button";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
 
 import { getMonthRange } from "./model/calendar";
-import { parseListState, type SearchParams } from "./model/filters";
+import { getNewWorkoutHref, parseListState, type SearchParams } from "./model/filters";
 import { WorkoutListView } from "./ui/workout-list-view";
 
 export async function WorkoutListPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -26,7 +26,7 @@ export async function WorkoutListPage({ searchParams }: { searchParams: Promise<
     <PageLayout
       title="기록"
       action={
-        <Button render={<Link href="/workouts/new" />} nativeButton={false} role="link">
+        <Button render={<Link href={getNewWorkoutHref(state.kind)} />} nativeButton={false} role="link">
           기록하기
         </Button>
       }

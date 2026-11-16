@@ -78,13 +78,13 @@ export const createEmptyExercise = (): StrengthExerciseFormValues => ({
   sets: [createEmptySet()],
 });
 
-export const createWorkoutFormValues = (today = getTodayInSeoul()): WorkoutFormValues => ({
+export const createWorkoutFormValues = (today = getTodayInSeoul(), kind: WorkoutKind = "run"): WorkoutFormValues => ({
   companionIds: [],
   crewId: null,
   duration: { ...EMPTY_DURATION },
   exercises: [createEmptyExercise()],
   id: null,
-  kind: "run",
+  kind,
   memo: "",
   placeName: "",
   run: { distanceKm: "", duration: { ...EMPTY_DURATION } },

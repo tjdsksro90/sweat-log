@@ -12,7 +12,12 @@ import {
   updateSet,
   type WorkoutFormValues,
 } from "@/features/workout/model/workout-form";
-import { exerciseErrorKey, setErrorKey, type WorkoutFormErrors } from "@/features/workout/model/workout-input";
+import {
+  acceptDecimal2Input,
+  exerciseErrorKey,
+  setErrorKey,
+  type WorkoutFormErrors,
+} from "@/features/workout/model/workout-input";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { FieldError } from "@/shared/ui/field";
@@ -96,9 +101,12 @@ function ExerciseCard({
                       {...control}
                       value={set.weightKg}
                       onChange={(event) =>
-                        onChange((values) => updateSet(values, exercise.key, set.key, { weightKg: event.target.value }))
+                        onChange((values) =>
+                          updateSet(values, exercise.key, set.key, {
+                            weightKg: acceptDecimal2Input(event.target.value, set.weightKg),
+                          }),
+                        )
                       }
-                      placeholder="맨몸"
                       autoComplete="off"
                     />
                   )}

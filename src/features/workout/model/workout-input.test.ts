@@ -9,7 +9,12 @@ import {
   updateSet,
   type WorkoutFormValues,
 } from "@/features/workout/model/workout-form";
-import { setErrorKey, toWorkoutInput, validateWorkoutStep } from "@/features/workout/model/workout-input";
+import {
+  acceptDecimal2Input,
+  setErrorKey,
+  toWorkoutInput,
+  validateWorkoutStep,
+} from "@/features/workout/model/workout-input";
 
 const TODAY = "2026-11-15";
 const CREW_ID = "00000000-0000-0000-0000-0000000000c1";
@@ -177,5 +182,25 @@ describe("toWorkoutInput", () => {
 
     expect(inputOf({ ...base, crewId: null }).companionIds).toEqual([]);
     expect("id" in inputOf({ ...base, id: null })).toBe(false);
+  });
+});
+
+describe("acceptDecimal2Input", () => {
+  it("숫자와 소수 둘째 자리까지는 입력 중인 상태까지 받는다", () => {
+    for (const value of ["", "5", "5.", "5.2", "5.22", ".5", "100.25"]) {
+      expect(acceptDecimal2Input(value, "1")).toBe(value);
+    }
+  });
+
+  it("소수 셋째 자리부터는 받지 않고 이전 값을 둔다", () => {
+    expect(acceptDecimal2Input("5.222", "5.22")).toBe("5.22");
+    // 붙여넣기처럼 한 번에 들어온 값도 같은 규칙이다.
+    expect(acceptDecimal2Input("5.222222222", "")).toBe("");
+  });
+
+  it("숫자가 아닌 입력은 받지 않는다", () => {
+    for (const value of ["5a", "-1", "5..2", "1,000", " 5", "5.2.1", "1e3"]) {
+      expect(acceptDecimal2Input(value, "3")).toBe("3");
+    }
   });
 });
