@@ -2,6 +2,8 @@ import { LogoutButton } from "@/features/auth/ui/logout-button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
 
+import { ThemeSettings } from "./theme-settings";
+
 export function SettingsScreen({
   nickname,
   logoutAction,
@@ -17,6 +19,7 @@ export function SettingsScreen({
           <p className="mt-1 break-words font-semibold text-title">{nickname}</p>
         </CardContent>
       </Card>
+      <ThemeSettings />
       <LogoutButton action={logoutAction} />
     </PageLayout>
   );
