@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { type FormEvent, startTransition, useActionState, useRef, useState } from "react";
 
 import Link from "next/link";
 
@@ -34,8 +34,14 @@ export function AuthForm({ action, mode }: AuthFormProps) {
     if (isConfirmTouched.current) setShowMismatch(isMismatch && confirm.value.length > 0);
   };
 
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => formAction(formData));
+  };
+
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-4">
       <Field>
         <FieldLabel htmlFor="email">이메일</FieldLabel>
         <Input autoComplete="email" id="email" inputMode="email" name="email" required type="email" />

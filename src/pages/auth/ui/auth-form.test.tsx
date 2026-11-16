@@ -41,6 +41,50 @@ describe("AuthForm", () => {
     expect(formData.get("password")).toBe("123456");
   });
 
+  it("로그인에 실패해도 입력한 이메일과 비밀번호가 남아 있다", async () => {
+    const user = userEvent.setup();
+    const action = vi.fn(
+      async (_state: AuthFormState, _formData: FormData): Promise<AuthFormState> => ({
+        error: "이메일 또는 비밀번호가 맞지 않아요.",
+      }),
+    );
+
+    render(<AuthForm action={action} mode="login" />);
+    await user.type(screen.getByLabelText("이메일"), "runner@example.com");
+    await user.type(screen.getByLabelText("비밀번호"), "123456");
+    await user.click(screen.getByRole("button", { name: "로그인" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("이메일 또는 비밀번호가 맞지 않아요.");
+
+    const emailInput = screen.getByLabelText("이메일");
+    const passwordInput = screen.getByLabelText("비밀번호");
+
+    expect(emailInput).toHaveValue("runner@example.com");
+    expect(passwordInput).toHaveValue("123456");
+  });
+
+  it("가입에 실패해도 입력한 값이 모두 남아 있다", async () => {
+    const user = userEvent.setup();
+    const action = vi.fn(
+      async (_state: AuthFormState, _formData: FormData): Promise<AuthFormState> => ({
+        error: "이미 가입한 이메일이에요.",
+      }),
+    );
+
+    render(<AuthForm action={action} mode="signup" />);
+    await user.type(screen.getByLabelText("이메일"), "runner@example.com");
+    await user.type(screen.getByLabelText("비밀번호"), "123456");
+    await user.type(screen.getByLabelText("비밀번호 확인"), "123456");
+    await user.type(screen.getByLabelText("닉네임"), "땀쟁이");
+    await user.click(screen.getByRole("button", { name: "가입하기" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("이미 가입한 이메일이에요.");
+    expect(screen.getByLabelText("이메일")).toHaveValue("runner@example.com");
+    expect(screen.getByLabelText("비밀번호")).toHaveValue("123456");
+    expect(screen.getByLabelText("비밀번호 확인")).toHaveValue("123456");
+    expect(screen.getByLabelText("닉네임")).toHaveValue("땀쟁이");
+  });
+
   it("가입할 때 비밀번호 확인이 다르면 알려 주고 제출하지 않는다", async () => {
     const user = userEvent.setup();
     const action = vi.fn(async (): Promise<AuthFormState> => ({ error: null }));
