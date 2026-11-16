@@ -159,6 +159,10 @@ function DemoWorkoutForm({
       title={detail ? "기록 수정" : "기록하기"}
       initialValues={initialValues}
       crews={crews}
+      existingCompanions={detail?.companions.map((companion) => ({
+        userId: companion.id,
+        nickname: companion.nickname,
+      }))}
       today={today}
       closeHref={detail ? `/workouts/${detail.id}` : "/workouts"}
       saveWorkout={actions.save}

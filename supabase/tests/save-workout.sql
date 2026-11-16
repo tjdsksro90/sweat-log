@@ -5,6 +5,7 @@
 --   A(민수): 크루 '새벽러닝' 만든 사람
 --   B(지은): 같은 크루
 --   C(태호): 크루 밖 사람
+--   D(서연): 같은 크루였다가 나간 사람
 
 begin;
 
@@ -12,9 +13,10 @@ insert into auth.users (id, email, raw_user_meta_data, aud, role)
 values
   ('00000000-0000-0000-0000-00000000000a', 'a@test.dev', '{"nickname":"민수"}', 'authenticated', 'authenticated'),
   ('00000000-0000-0000-0000-00000000000b', 'b@test.dev', '{"nickname":"지은"}', 'authenticated', 'authenticated'),
-  ('00000000-0000-0000-0000-00000000000c', 'c@test.dev', '{"nickname":"태호"}', 'authenticated', 'authenticated');
+  ('00000000-0000-0000-0000-00000000000c', 'c@test.dev', '{"nickname":"태호"}', 'authenticated', 'authenticated'),
+  ('00000000-0000-0000-0000-00000000000d', 'd@test.dev', '{"nickname":"서연"}', 'authenticated', 'authenticated');
 
-create temporary table ctx (crew_id uuid, invite_code text, run_id uuid, strength_id uuid, other_id uuid, c_workout uuid);
+create temporary table ctx (crew_id uuid, invite_code text, run_id uuid, strength_id uuid, other_id uuid, c_workout uuid, left_id uuid);
 grant all on ctx to authenticated;
 insert into ctx default values;
 
@@ -257,6 +259,85 @@ begin
   assert (select count(*) from public.list_workouts(p_crew_id => (select crew_id from ctx))) = 0, 'C는 남의 크루 피드를 못 본다';
   assert (select count(*) from public.list_workouts()) = 1, 'C는 자기 기록만 본다';
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- 크루를 나간 동행자. 이미 있던 동행자는 그대로 두고, 새로 넣는 사람만 같은 크루인지 본다.
+-- ---------------------------------------------------------------------------
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","role":"authenticated"}', true);
+select public.join_crew_by_code((select invite_code from ctx));
+
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+update ctx set left_id = public.save_workout(jsonb_build_object(
+  'kind', 'other', 'workout_date', '2026-11-08', 'duration_seconds', 3600, 'memo', '셋이 등산',
+  'crew_id', (select crew_id from ctx),
+  'companion_ids', jsonb_build_array('00000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000d')
+));
+
+-- D가 크루를 나간다. 이제 A와 같은 크루가 하나도 없다.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","role":"authenticated"}', true);
+delete from public.crew_members where user_id = '00000000-0000-0000-0000-00000000000d';
+
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+
+-- 메모만 고친다. 폼은 기존 동행자를 그대로 보낸다.
+select public.save_workout(jsonb_build_object(
+  'id', (select left_id from ctx),
+  'kind', 'other', 'workout_date', '2026-11-08', 'duration_seconds', 3600, 'memo', '셋이 등산, 정상까지',
+  'crew_id', (select crew_id from ctx),
+  'companion_ids', jsonb_build_array('00000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000d')
+));
+
+do $$
+declare
+  v ctx;
+begin
+  select * into v from ctx;
+
+  assert (select memo from public.workouts where id = v.left_id) = '셋이 등산, 정상까지',
+    '크루를 나간 동행자가 있어도 메모를 고칠 수 있다';
+  assert (select array_agg(user_id order by user_id) from public.workout_companions where workout_id = v.left_id)
+    = array['00000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000d']::uuid[],
+    '크루를 나간 동행자는 그대로 남는다';
+end $$;
+
+-- 크루 밖 새 사람(C)을 더하면 안 된다. 기존 동행자와 함께 보내도 마찬가지다.
+select pg_temp.expect_error(jsonb_build_object(
+  'id', (select left_id from ctx),
+  'kind', 'other', 'workout_date', '2026-11-08', 'duration_seconds', 3600,
+  'crew_id', (select crew_id from ctx),
+  'companion_ids', jsonb_build_array('00000000-0000-0000-0000-00000000000d', '00000000-0000-0000-0000-00000000000c')
+), 'invalid_companion');
+
+-- 나간 동행자를 뺀다
+select public.save_workout(jsonb_build_object(
+  'id', (select left_id from ctx),
+  'kind', 'other', 'workout_date', '2026-11-08', 'duration_seconds', 3600, 'memo', '셋이 등산, 정상까지',
+  'crew_id', (select crew_id from ctx),
+  'companion_ids', jsonb_build_array('00000000-0000-0000-0000-00000000000b')
+));
+
+do $$
+begin
+  assert (select array_agg(user_id) from public.workout_companions where workout_id = (select left_id from ctx))
+    = array['00000000-0000-0000-0000-00000000000b'::uuid],
+    '크루를 나간 동행자를 뺄 수 있다';
+end $$;
+
+-- 한 번 뺀 사람은 이제 새로 넣는 사람이라 같은 크루여야 한다. 새 기록에도 넣을 수 없다.
+select pg_temp.expect_error(jsonb_build_object(
+  'id', (select left_id from ctx),
+  'kind', 'other', 'workout_date', '2026-11-08',
+  'companion_ids', jsonb_build_array('00000000-0000-0000-0000-00000000000d')
+), 'invalid_companion');
+select pg_temp.expect_error(
+  '{"kind":"other","workout_date":"2026-11-14","companion_ids":["00000000-0000-0000-0000-00000000000d"]}', 'invalid_companion');
+
+-- 함께한 친구(B)도 이 기록을 고칠 수 없다
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+select pg_temp.expect_error(jsonb_build_object(
+  'id', (select left_id from ctx), 'kind', 'other', 'workout_date', '2026-11-08',
+  'companion_ids', jsonb_build_array('00000000-0000-0000-0000-00000000000a')
+), 'workout_not_found');
 
 -- 익명 사용자는 함수를 부를 수 없다
 reset role;

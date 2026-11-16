@@ -26,7 +26,7 @@ export type WorkoutListRow = {
   user_id: string;
   author: WorkoutPersonRow | null;
   crew: { id: string; name: string } | null;
-  companions: { profile: WorkoutPersonRow | null }[];
+  companions: { user_id: string; profile: WorkoutPersonRow | null }[];
   run: { distance_meters: number; duration_seconds: number } | null;
   sets: StrengthSetRow[];
   comments: { count: number }[];
@@ -110,7 +110,12 @@ export const toStrengthSummary = (sets: StrengthSetRow[]) => ({
   totalVolumeKg: roundKg(sets.reduce((total, set) => total + getSetVolumeKg(set), 0)),
 });
 
-const toCommonFields = (row: WorkoutListRow) => {
+// 작성자의 다른 크루 친구라서 내가 프로필을 볼 수 없는 동행자는 뺀다.
+// 다만 작성자 본인에게는 남긴다. 크루를 나간 동행자도 수정 화면에서 그대로 두거나 뺄 수 있어야 해서다.
+const toCompanions = (companions: WorkoutListRow["companions"], keepHidden: boolean) =>
+  companions.flatMap(({ user_id, profile }) => (profile || keepHidden ? [toPerson(profile, user_id)] : []));
+
+const toCommonFields = (row: WorkoutListRow, viewerId?: string) => {
   const kind = toKind(row.kind);
 
   return {
@@ -120,8 +125,7 @@ const toCommonFields = (row: WorkoutListRow) => {
     title: row.title,
     placeName: row.place_name,
     author: toPerson(row.author, row.user_id),
-    // 작성자의 다른 크루 친구라서 내가 프로필을 볼 수 없는 동행자는 뺀다.
-    companions: row.companions.flatMap(({ profile }) => (profile ? [toPerson(profile, profile.id)] : [])),
+    companions: toCompanions(row.companions, row.user_id === viewerId),
     crew: row.crew ? { id: row.crew.id, name: row.crew.name } : null,
     run:
       kind === "run" && row.run
@@ -142,7 +146,7 @@ export const toWorkoutListItem = (row: WorkoutListRow): WorkoutListItem => {
 };
 
 export const toWorkoutDetail = (row: WorkoutDetailRow, viewerId: string): WorkoutDetail => {
-  const common = toCommonFields(row);
+  const common = toCommonFields(row, viewerId);
 
   return {
     ...common,

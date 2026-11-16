@@ -5,8 +5,10 @@ import type { DeleteWorkoutResult, SaveWorkoutResult } from "@/features/workout/
 export type WorkoutFormCrew = {
   id: string;
   name: string;
-  members: { userId: string; nickname: string }[];
+  members: WorkoutFormMember[];
 };
+
+export type WorkoutFormMember = { userId: string; nickname: string };
 
 // Server Action을 prop으로 받는다. 테스트에서는 vi.fn()으로 바꿔 넣는다.
 export type SaveWorkoutAction = (input: WorkoutInput) => Promise<SaveWorkoutResult>;

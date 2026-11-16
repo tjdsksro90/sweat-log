@@ -15,6 +15,8 @@ import {
 const MINSU = { id: "00000000-0000-0000-0000-00000000000a", nickname: "민수" };
 const JIEUN = { id: "00000000-0000-0000-0000-00000000000b", nickname: "지은" };
 const CREW = { id: "00000000-0000-0000-0000-0000000000c1", name: "새벽러닝" };
+// 크루를 나가서 프로필을 볼 수 없게 된 동행자
+const HIDDEN_COMPANION = { user_id: "00000000-0000-0000-0000-00000000000d", profile: null };
 
 const runRow: WorkoutListRow = {
   id: "00000000-0000-0000-0000-000000000101",
@@ -27,7 +29,7 @@ const runRow: WorkoutListRow = {
   user_id: MINSU.id,
   author: MINSU,
   crew: CREW,
-  companions: [{ profile: JIEUN }],
+  companions: [{ user_id: JIEUN.id, profile: JIEUN }],
   run: { distance_meters: 7200, duration_seconds: 2430 },
   sets: [],
   comments: [{ count: 2 }],
@@ -75,7 +77,11 @@ describe("toWorkoutListItem", () => {
   });
 
   it("볼 수 없는 프로필: 작성자는 '알 수 없음', 동행자는 뺀다", () => {
-    const item = toWorkoutListItem({ ...runRow, author: null, companions: [{ profile: null }, { profile: JIEUN }] });
+    const item = toWorkoutListItem({
+      ...runRow,
+      author: null,
+      companions: [HIDDEN_COMPANION, { user_id: JIEUN.id, profile: JIEUN }],
+    });
 
     expect(item.author).toEqual({ id: MINSU.id, nickname: "알 수 없음" });
     expect(item.companions).toEqual([JIEUN]);
@@ -103,6 +109,16 @@ describe("toWorkoutDetail", () => {
 
     expect(toWorkoutDetail(otherRow, MINSU.id).exercises).toEqual([]);
     expect(toWorkoutListItem(otherRow).strengthSummary).toBeNull();
+  });
+
+  it("프로필을 볼 수 없는 동행자는 작성자에게만 '알 수 없음'으로 남는다", () => {
+    const row = { ...strengthRow, companions: [{ user_id: JIEUN.id, profile: JIEUN }, HIDDEN_COMPANION] };
+
+    expect(toWorkoutDetail(row, MINSU.id).companions).toEqual([
+      JIEUN,
+      { id: HIDDEN_COMPANION.user_id, nickname: "알 수 없음" },
+    ]);
+    expect(toWorkoutDetail(row, JIEUN.id).companions).toEqual([JIEUN]);
   });
 });
 

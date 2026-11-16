@@ -5,7 +5,8 @@ import { FieldDescription, FieldLegend, FieldSet } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
 
-import type { WorkoutFormCrew } from "../model/types";
+import { withExistingCompanions } from "../model/crews";
+import type { WorkoutFormCrew, WorkoutFormMember } from "../model/types";
 import { FormField } from "./form-field";
 
 // 크루 이름(30자)·닉네임이 띄어쓰기 없이 길어도 좁은 화면을 넘지 않게 칩 안에서 줄을 바꾼다.
@@ -17,14 +18,17 @@ export function FinishStep({
   values,
   errors,
   crews,
+  existingCompanions,
   onChange,
 }: {
   values: WorkoutFormValues;
   errors: WorkoutFormErrors;
   crews: WorkoutFormCrew[];
+  existingCompanions: WorkoutFormMember[];
   onChange: (update: (values: WorkoutFormValues) => WorkoutFormValues) => void;
 }) {
   const selectedCrew = crews.find((crew) => crew.id === values.crewId) ?? null;
+  const candidates = selectedCrew ? withExistingCompanions(selectedCrew.members, existingCompanions) : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -88,7 +92,7 @@ export function FinishStep({
                       changeCrew(
                         current,
                         crew.id,
-                        crew.members.map((member) => member.userId),
+                        withExistingCompanions(crew.members, existingCompanions).map((member) => member.userId),
                       ),
                     )
                   }
@@ -104,11 +108,11 @@ export function FinishStep({
       {selectedCrew && (
         <FieldSet className="min-w-0 gap-3">
           <FieldLegend variant="label">함께한 친구 (선택)</FieldLegend>
-          {selectedCrew.members.length === 0 ? (
+          {candidates.length === 0 ? (
             <FieldDescription className="break-words">아직 {selectedCrew.name}에 다른 친구가 없어요.</FieldDescription>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {selectedCrew.members.map((member) => (
+              {candidates.map((member) => (
                 <FilterChip
                   key={member.userId}
                   className={LONG_CHIP}

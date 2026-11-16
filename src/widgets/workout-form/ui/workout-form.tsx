@@ -15,7 +15,7 @@ import { useAppRouter } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
 import { FieldError } from "@/shared/ui/field";
 
-import type { DeleteWorkoutAction, SaveWorkoutAction, WorkoutFormCrew } from "../model/types";
+import type { DeleteWorkoutAction, SaveWorkoutAction, WorkoutFormCrew, WorkoutFormMember } from "../model/types";
 import { useLeaveGuard } from "../model/use-leave-guard";
 import { BasicsStep } from "./basics-step";
 import { ConfirmSheet } from "./confirm-sheet";
@@ -26,6 +26,7 @@ type WorkoutFormProps = {
   title: string;
   initialValues: WorkoutFormValues;
   crews: WorkoutFormCrew[];
+  existingCompanions?: WorkoutFormMember[]; // 수정 화면에만. 기록에 이미 있는 동행자
   today: string;
   closeHref: string;
   saveWorkout: SaveWorkoutAction;
@@ -40,6 +41,7 @@ export function WorkoutForm({
   title,
   initialValues,
   crews,
+  existingCompanions = [],
   today,
   closeHref,
   saveWorkout,
@@ -192,7 +194,15 @@ export function WorkoutForm({
           </h2>
           {step === "basics" && <BasicsStep values={values} errors={errors} today={today} onChange={update} />}
           {step === "detail" && <DetailStep values={values} errors={errors} onChange={update} />}
-          {step === "finish" && <FinishStep values={values} errors={errors} crews={crews} onChange={update} />}
+          {step === "finish" && (
+            <FinishStep
+              values={values}
+              errors={errors}
+              crews={crews}
+              existingCompanions={existingCompanions}
+              onChange={update}
+            />
+          )}
         </div>
 
         <div className="mt-auto flex flex-col gap-3">

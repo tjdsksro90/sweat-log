@@ -16,7 +16,7 @@ const LIST_SELECT = `
   id, kind, workout_date, title, place_name, duration_seconds, created_at, user_id,
   author:profiles!workouts_user_id_fkey(id, nickname),
   crew:crews!workouts_crew_id_fkey(id, name),
-  companions:workout_companions(profile:profiles!workout_companions_user_id_fkey(id, nickname)),
+  companions:workout_companions(user_id, profile:profiles!workout_companions_user_id_fkey(id, nickname)),
   run:run_details(distance_meters, duration_seconds),
   sets:strength_sets(exercise_name, exercise_order, set_order, weight_kg, reps),
   comments:workout_comments(count)
