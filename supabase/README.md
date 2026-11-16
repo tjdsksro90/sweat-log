@@ -43,6 +43,7 @@ pnpm db:types     # src/shared/api/supabase/database.types.ts 재생성
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/access-control.sql
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/save-workout.sql
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/workout-streak.sql
+docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/running-stats.sql
 ```
 
 ## 기록 저장·목록 함수
@@ -50,4 +51,7 @@ docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < su
 - `save_workout(p_input jsonb) returns uuid`: 공통 정보, 러닝 상세 또는 헬스 세트, 함께한 친구를 한 트랜잭션으로 저장한다. `id`가 있으면 수정이다. 입력 모양과 오류 코드(`invalid_workout_detail` 등)는 마이그레이션 주석에 있다. 앱에서는 `toSaveWorkoutPayload`(`src/entities/workout/model/workout-mappers.ts`)로 입력을 만든다.
 - `list_workouts(...) returns setof workouts`: 내 기록(작성 + 함께한) 또는 크루 피드를 고르고 커서로 이어 본다. 앱에서는 `getWorkoutPage`(`src/entities/workout/api/server-queries.ts`)로 부른다.
 - `get_workout_streak(p_today date) returns integer`: 내가 작성한 기록의 연속 운동 일수. 오늘 안 했으면 어제부터 센다. 앱에서는 `getWeeklySummary`가 부른다.
+- `get_running_monthly_distance(p_today date, p_months integer default 12)`: 최근 n개월(이번 달 포함, 1~24) 월별 러닝 거리·횟수. 빈 달도 0으로 준다.
+- `get_running_records(p_today date)`: 최고 페이스(1km 이상), 5km·10km 이상 최고 페이스, 최장 거리·시간. 해당 러닝이 없으면 그 행이 없다.
+- 러닝 통계 두 함수는 내가 작성했거나 함께한 친구로 들어간 러닝만 센다. 크루에 공유만 된 친구의 러닝은 넣지 않는다. 앱에서는 `getRunningStats`가 부르고, 체험은 같은 규칙의 `buildRunningStats`(`src/entities/workout/model/running-stats.ts`)로 집계한다.
 - 모두 `security invoker`라서 권한은 RLS가 판단한다. 기록 삭제는 함수 없이 `workouts`를 지우면 상세가 cascade로 지워진다.

@@ -1,11 +1,21 @@
 import type { WeeklySummary } from "@/entities/workout/model/contracts";
+import type { RunningStats } from "@/entities/workout/model/running-stats";
 import { AppLink } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
 
+import { RunningStatsCard } from "./running-stats-card";
 import { WeeklySummaryCard } from "./weekly-summary-card";
 
-export function HomeScreen({ nickname, summary }: { nickname: string; summary: WeeklySummary }) {
+export function HomeScreen({
+  nickname,
+  summary,
+  runningStats,
+}: {
+  nickname: string;
+  summary: WeeklySummary;
+  runningStats: RunningStats;
+}) {
   return (
     <PageLayout
       title="홈"
@@ -20,6 +30,7 @@ export function HomeScreen({ nickname, summary }: { nickname: string; summary: W
         <p className="break-words font-bold text-3xl text-foreground">{nickname}님.</p>
       </section>
       <WeeklySummaryCard summary={summary} />
+      <RunningStatsCard stats={runningStats} />
     </PageLayout>
   );
 }

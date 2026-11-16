@@ -6,6 +6,7 @@ import type {
   WorkoutListFilter,
   WorkoutPage,
 } from "@/entities/workout/model/contracts";
+import { buildRunningStats, type RunningStats } from "@/entities/workout/model/running-stats";
 import { addDays, buildWeeklySummary, getKstToday, getWeekStart } from "@/entities/workout/model/weekly-summary";
 import { decodeWorkoutCursor, encodeWorkoutCursor, type WorkoutCursor } from "@/entities/workout/model/workout-cursor";
 import { toWorkoutDetail, toWorkoutListItem, type WorkoutDetailRow } from "@/entities/workout/model/workout-mappers";
@@ -189,6 +190,29 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
       weekWorkouts: mine.filter((row) => row.workout_date >= start && row.workout_date <= addDays(start, 6)),
     });
   };
+  // 실제 앱의 DB 함수와 같은 범위(내가 쓰거나 함께한 러닝)를 같은 순수 함수 규칙으로 집계한다.
+  const getRunningStats = async (today = getKstToday(now())): Promise<RunningStats> => {
+    const mine = read().workouts.filter(
+      (row) => row.user_id === DEMO_USER.id || row.companions.some(({ profile }) => profile?.id === DEMO_USER.id),
+    );
+    return buildRunningStats({
+      today,
+      hasWorkouts: mine.length > 0,
+      runs: mine.flatMap((row) =>
+        row.kind === "run" && row.run
+          ? [
+              {
+                workoutId: row.id,
+                workoutDate: row.workout_date,
+                createdAt: row.created_at,
+                distanceMeters: row.run.distance_meters,
+                durationSeconds: row.run.duration_seconds,
+              },
+            ]
+          : [],
+      ),
+    });
+  };
   const getMyCrews = async (): Promise<CrewSummary[]> => [
     { id: DEMO_CREW.id, name: DEMO_CREW.name, memberCount: DEMO_CREW.members.length },
   ];
@@ -318,6 +342,7 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
     getWorkoutPage,
     getWorkoutDetail,
     getWeeklySummary,
+    getRunningStats,
     getMyCrews,
     getCrew,
     getWorkoutFormCrews,
@@ -352,6 +377,7 @@ const browserOnly =
 export const getWorkoutPage = browserOnly(sharedStore.getWorkoutPage);
 export const getWorkoutDetail = browserOnly(sharedStore.getWorkoutDetail);
 export const getWeeklySummary = browserOnly(sharedStore.getWeeklySummary);
+export const getRunningStats = browserOnly(sharedStore.getRunningStats);
 export const getMyCrews = browserOnly(sharedStore.getMyCrews);
 export const getCrew = browserOnly(sharedStore.getCrew);
 export const getWorkoutFormCrews = browserOnly(sharedStore.getWorkoutFormCrews);

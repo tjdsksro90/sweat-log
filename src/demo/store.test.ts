@@ -439,3 +439,28 @@ describe("세션 저장과 초기화", () => {
     expect(storage).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("러닝 통계", () => {
+  it("샘플에서 내가 쓰거나 함께한 러닝을 월별로 모으고 개인 기록을 고른다", async () => {
+    const stats = await makeStore().getRunningStats();
+    expect(stats.hasWorkouts).toBe(true);
+    expect(stats.months).toHaveLength(12);
+    // 11월: 내 러닝 다섯 건 + 지수가 나를 동행자로 넣은 오늘 러닝
+    expect(stats.months.at(-1)).toEqual({ month: "2026-11", distanceMeters: 34000, runCount: 6 });
+    expect(stats.months.at(-2)).toEqual({ month: "2026-10", distanceMeters: 17500, runCount: 3 });
+    expect(stats.records.longestDistance).toMatchObject({ workoutDate: "2026-10-20", distanceMeters: 6500 });
+    // 샘플 러닝은 모두 6'00"/km라 먼저 세운 기록이 남는다.
+    expect(stats.records.bestPace?.workoutDate).toBe("2026-10-20");
+    expect(stats.records.bestPace10k).toBeNull();
+  });
+
+  it("새 러닝 저장을 바로 반영한다", async () => {
+    const store = makeStore();
+    const saved = await store.saveWorkout(input({ run: { distanceMeters: 10000, durationSeconds: 2700 } }));
+    if (!saved.ok) throw new Error(saved.error);
+    const stats = await store.getRunningStats();
+    expect(stats.records.bestPace10k?.workoutId).toBe(saved.id);
+    expect(stats.records.longestDistance?.workoutId).toBe(saved.id);
+    expect(stats.months.at(-1)?.distanceMeters).toBe(44000);
+  });
+});

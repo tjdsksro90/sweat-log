@@ -332,6 +332,24 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      get_running_monthly_distance: {
+        Args: { p_months?: number; p_today: string };
+        Returns: {
+          distance_meters: number;
+          month: string;
+          run_count: number;
+        }[];
+      };
+      get_running_records: {
+        Args: { p_today: string };
+        Returns: {
+          distance_meters: number;
+          duration_seconds: number;
+          record_type: string;
+          workout_date: string;
+          workout_id: string;
+        }[];
+      };
       get_workout_streak: { Args: { p_today: string }; Returns: number };
       join_crew_by_code: {
         Args: { p_invite_code: string };

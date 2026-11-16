@@ -12,6 +12,7 @@ describe("공유 데모 저장소의 서버 접근 차단", () => {
       () => store.getWorkoutPage(),
       () => store.getWorkoutDetail("missing"),
       () => store.getWeeklySummary(),
+      () => store.getRunningStats(),
       () => store.getMyCrews(),
       () => store.getCrew(DEMO_CREW.id),
       () => store.getWorkoutFormCrews(),
