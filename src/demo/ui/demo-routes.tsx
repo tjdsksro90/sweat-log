@@ -109,8 +109,9 @@ function DemoWorkoutDetail({ workoutId }: { workoutId: string }) {
         comments.isPending ? null : (
           <WorkoutCommentsView
             workoutId={workoutId}
-            comments={comments.data ?? null}
+            page={comments.data ?? null}
             now={new Date()}
+            loadOlder={store.loadOlderComments}
             createAction={actions.create}
             deleteAction={actions.remove}
           />

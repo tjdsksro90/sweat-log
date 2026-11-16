@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
 import { getWorkoutDetail } from "@/entities/workout/api/server-queries";
-import { createComment, deleteComment } from "@/features/workout-comment/api/comment-actions";
+import { createComment, deleteComment, loadOlderComments } from "@/features/workout-comment/api/comment-actions";
 import { getWorkoutComments } from "@/features/workout-comment/api/queries";
 import { WorkoutComments } from "@/features/workout-comment/ui/workout-comments";
 import { WorkoutCommentsLoading } from "@/features/workout-comment/ui/workout-comments-loading";
@@ -22,6 +22,7 @@ export async function WorkoutDetailPage({ params }: { params: Promise<{ workoutI
           <WorkoutComments
             workoutId={workout.id}
             loadComments={getWorkoutComments}
+            loadOlder={loadOlderComments}
             createAction={createComment}
             deleteAction={deleteComment}
           />

@@ -1,11 +1,27 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 
 import { isUuid } from "@/entities/crew/model/uuid";
 import { requireUser } from "@/shared/api/supabase/require-user";
 
 import { type CommentFormState, validateCommentBody } from "../model/comment-form";
+import { decodeCommentCursor, type OlderCommentsResult } from "../model/comment-page";
+import { getOlderWorkoutComments } from "./queries";
+
+// "이전 댓글 보기". 클라이언트가 보낸 값이라 기록 ID와 커서를 다시 검사한다. 실패는 화면에서 안내하도록 값으로 돌려준다.
+export const loadOlderComments = async (workoutId: string, cursor: string): Promise<OlderCommentsResult> => {
+  const decoded = decodeCommentCursor(cursor);
+  if (!isUuid(workoutId) || !decoded) return { ok: false };
+  try {
+    return { ok: true, ...(await getOlderWorkoutComments(workoutId, decoded)) };
+  } catch (error) {
+    // 로그인 이동 같은 Next.js 내부 흐름은 그대로 넘긴다.
+    unstable_rethrow(error);
+    return { ok: false };
+  }
+};
 
 export const createComment = async (_state: CommentFormState, formData: FormData): Promise<CommentFormState> => {
   const { supabase, user } = await requireUser();
