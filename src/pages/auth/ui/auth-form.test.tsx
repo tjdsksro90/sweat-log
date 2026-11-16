@@ -82,4 +82,46 @@ describe("AuthForm", () => {
     expect(formData.get("password")).toBe("123456");
     expect(formData.get("passwordConfirm")).toBe("123456");
   });
+  it("비밀번호 보기 버튼을 누르면 글자로 보이고 다시 누르면 가린다", async () => {
+    const user = userEvent.setup();
+    const action = vi.fn(async (): Promise<AuthFormState> => ({ error: null }));
+
+    render(<AuthForm action={action} mode="login" />);
+    const password = screen.getByLabelText("비밀번호");
+    expect(password).toHaveAttribute("type", "password");
+
+    await user.click(screen.getByRole("button", { name: "비밀번호 보기" }));
+    expect(password).toHaveAttribute("type", "text");
+    const hideButton = screen.getByRole("button", { name: "비밀번호 숨기기" });
+    expect(hideButton).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(hideButton);
+    expect(password).toHaveAttribute("type", "password");
+    expect(screen.getByRole("button", { name: "비밀번호 보기" })).toHaveAttribute("aria-pressed", "false");
+    expect(action).not.toHaveBeenCalled();
+  });
+
+  it("가입 화면에서 비밀번호와 비밀번호 확인 칸을 따로 보이게 한다", async () => {
+    const user = userEvent.setup();
+    const action = vi.fn(async (): Promise<AuthFormState> => ({ error: null }));
+
+    render(<AuthForm action={action} mode="signup" />);
+    await user.type(screen.getByLabelText("이메일"), "runner@example.com");
+    await user.type(screen.getByLabelText("비밀번호"), "123456");
+    await user.type(screen.getByLabelText("비밀번호 확인"), "123456");
+    await user.type(screen.getByLabelText("닉네임"), "땀쟁이");
+
+    const [passwordToggle, confirmToggle] = screen.getAllByRole("button", { name: "비밀번호 보기" });
+    await user.click(confirmToggle);
+    expect(screen.getByLabelText("비밀번호 확인")).toHaveAttribute("type", "text");
+    expect(screen.getByLabelText("비밀번호")).toHaveAttribute("type", "password");
+    expect(confirmToggle).toHaveAccessibleName("비밀번호 숨기기");
+    expect(passwordToggle).toHaveAccessibleName("비밀번호 보기");
+
+    await user.click(passwordToggle);
+    expect(screen.getByLabelText("비밀번호")).toHaveAttribute("type", "text");
+    // 폼을 다 채운 상태에서도 토글은 제출하지 않는다.
+    expect(action).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("비밀번호 확인")).toHaveAttribute("autocomplete", "new-password");
+  });
 });

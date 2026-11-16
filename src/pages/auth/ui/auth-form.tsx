@@ -9,6 +9,8 @@ import { Button } from "@/shared/ui/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
 
+import { PasswordInput } from "./password-input";
+
 type AuthFormProps = {
   mode: "login" | "signup";
   action: (state: AuthFormState, formData: FormData) => Promise<AuthFormState>;
@@ -40,7 +42,7 @@ export function AuthForm({ action, mode }: AuthFormProps) {
       </Field>
       <Field>
         <FieldLabel htmlFor="password">비밀번호</FieldLabel>
-        <Input
+        <PasswordInput
           autoComplete={isSignup ? "new-password" : "current-password"}
           id="password"
           minLength={6}
@@ -49,14 +51,13 @@ export function AuthForm({ action, mode }: AuthFormProps) {
           onChange={syncPasswordMismatch}
           ref={passwordRef}
           required
-          type="password"
         />
         {isSignup && <FieldDescription id="password-hint">6자 이상 입력해 주세요.</FieldDescription>}
       </Field>
       {isSignup && (
         <Field data-invalid={showMismatch || undefined}>
           <FieldLabel htmlFor="passwordConfirm">비밀번호 확인</FieldLabel>
-          <Input
+          <PasswordInput
             aria-describedby={showMismatch ? "password-confirm-error" : undefined}
             aria-invalid={showMismatch || undefined}
             autoComplete="new-password"
@@ -70,7 +71,6 @@ export function AuthForm({ action, mode }: AuthFormProps) {
             onChange={syncPasswordMismatch}
             ref={passwordConfirmRef}
             required
-            type="password"
           />
           {showMismatch && <FieldError id="password-confirm-error">{PASSWORD_MISMATCH_MESSAGE}</FieldError>}
         </Field>
