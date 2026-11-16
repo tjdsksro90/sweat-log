@@ -29,3 +29,24 @@
 목록은 실제 API처럼 20개씩 날짜·작성 시각·ID 내림차순으로 반환한다. 기본 목록은 내 기록과 동행 기록이며, `crewId`를 지정하면 크루 공유 기록이다. 주간 요약은 내가 작성한 기록만 집계한다. 수정·삭제는 본인 기록과 댓글에만 허용한다.
 
 날짜·커서·목록/상세 매핑·주간 합계·입력 검증·폼 크루 변환은 기존 순수 함수를 재사용한다. 실제 Server Action 모듈에서는 타입만 가져온다.
+
+## 화면 연결
+
+```text
+app/demo/page.tsx        # /demo: 소개 + 휴대폰 크기 iframe(/demo/app) + "처음부터 다시"
+app/demo/app/page.tsx    # /demo/app: DemoApp을 Suspense 안에서 클라이언트로만 그린다
+src/demo/model/          # 순수 로직(테스트 대상)
+  demo-path.ts           #   실제 앱 경로 ↔ /demo/app?path=… 변환, 경로 → 화면 매칭
+  workout-list.ts        #   목록·달력 조회(실제 목록 페이지와 같은 규칙)
+src/demo/ui/
+  demo-app.tsx           #   AppNavigationProvider 주입, 링크 가로채기, 스크롤
+  demo-routes.tsx        #   화면별로 저장소를 읽어 실제 *Screen·WorkoutForm에 넘긴다
+  demo-notice.tsx        #   "체험에서는 지원하지 않아요" 안내
+  demo-landing.tsx, demo-preview.tsx  # /demo 소개와 iframe
+```
+
+- 화면은 실제 앱의 `*Screen`, `WorkoutForm`, `WorkoutCommentsView`, `BottomNavigation`을 그대로 쓴다. 복사하지 않는다.
+- 이동은 `window.history.pushState/replaceState`로 `?path=`만 바꾼다. Next가 `useSearchParams`를 갱신하므로 서버를 다시 부르지 않는다.
+- 화면 속 링크는 `/demo/app?path=…`를 가리키고, `document.body` capture 단계에서 가로채 위 방식으로 이동한다. 작성 중 이탈 확인(document capture)이 먼저 받고, Next Link의 onClick(bubble)보다는 앞선다.
+- 조회는 TanStack Query(`["demo", …]`)로 한다. 댓글 작성·삭제 뒤에는 지금 화면을 다시 읽고, 기록 저장·삭제 뒤에는 표시만 해 두고 다음 화면에서 다시 읽는다.
+- 크루 만들기·초대 코드 가입·나가기, 로그아웃은 안내 문구로 대신한다.
