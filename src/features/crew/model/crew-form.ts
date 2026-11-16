@@ -1,5 +1,8 @@
 export type CrewFormState = { error: string | null };
 
+// 크루 만들기·가입·나가기 함수의 모양. 실제 앱은 Server Action을 넘긴다.
+export type CrewFormAction = (state: CrewFormState, formData: FormData) => Promise<CrewFormState>;
+
 export const INITIAL_CREW_FORM_STATE: CrewFormState = { error: null };
 
 export const normalizeInviteCode = (code: string) => code.trim().toUpperCase();
