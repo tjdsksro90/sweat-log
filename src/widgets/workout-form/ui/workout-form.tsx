@@ -3,7 +3,6 @@
 import { type FormEvent, useEffect, useRef, useState, useTransition } from "react";
 
 import { TrashIcon, XIcon } from "@phosphor-icons/react";
-import { useRouter } from "next/navigation";
 
 import {
   isWorkoutFormDirty,
@@ -12,6 +11,7 @@ import {
   type WorkoutFormValues,
 } from "@/features/workout/model/workout-form";
 import { toWorkoutInput, validateWorkoutStep } from "@/features/workout/model/workout-input";
+import { useAppRouter } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
 import { FieldError } from "@/shared/ui/field";
 
@@ -45,7 +45,7 @@ export function WorkoutForm({
   saveWorkout,
   deleteWorkout,
 }: WorkoutFormProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [values, setValues] = useState(initialValues);
   const [stepIndex, setStepIndex] = useState(0);
   // 다음·저장을 한 번 누른 뒤부터 오류를 보여주고, 고치는 대로 다시 계산한다.

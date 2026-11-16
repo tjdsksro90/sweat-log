@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getCrew } from "@/entities/crew/api/queries";
@@ -7,6 +6,7 @@ import { leaveCrew } from "@/features/crew/api/crew-actions";
 import { CopyInviteCode } from "@/features/crew/ui/copy-invite-code";
 import { LeaveCrew } from "@/features/crew/ui/leave-crew";
 import { requireUser } from "@/shared/api/supabase/require-user";
+import { AppLink } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
@@ -29,7 +29,7 @@ export async function CrewDetailPage({
   const page = await getWorkoutPage({ crewId, cursor: typeof cursor === "string" ? cursor : undefined });
   return (
     <PageLayout title={crew.name}>
-      <Button variant="ghost" role="link" render={<Link href="/crews" />} nativeButton={false}>
+      <Button variant="ghost" role="link" render={<AppLink href="/crews" />} nativeButton={false}>
         크루 목록으로
       </Button>
       <Card>

@@ -1,7 +1,6 @@
-import Link from "next/link";
-
 import { getWorkoutPage } from "@/entities/workout/api/server-queries";
 import { getKstToday } from "@/entities/workout/model/weekly-summary";
+import { AppLink } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
 
@@ -26,7 +25,7 @@ export async function WorkoutListPage({ searchParams }: { searchParams: Promise<
     <PageLayout
       title="기록"
       action={
-        <Button render={<Link href={getNewWorkoutHref(state.kind)} />} nativeButton={false} role="link">
+        <Button render={<AppLink href={getNewWorkoutHref(state.kind)} />} nativeButton={false} role="link">
           기록하기
         </Button>
       }

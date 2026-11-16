@@ -2,19 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { useRouter } from "next/navigation";
-
 type LeaveAction = () => void;
 
 /**
  * 작성 중에 화면을 떠나려 하면 확인을 받는다.
  * - 새로고침·탭 닫기: beforeunload(브라우저 기본 확인창)
  * - 앱 안 링크(하단 탭 등): 문서 capture 단계에서 클릭을 가로챈다. React·Next Link보다 먼저 받는다.
+ *   확인하면 같은 링크를 다시 눌러 Link가 직접 이동하게 한다. 주소 체계가 다른 체험 데모에서도 그대로 동작한다.
  * - 브라우저 뒤로 가기: 같은 주소로 history 항목을 하나 더 쌓아 두고, 그 항목이 빠지면 확인을 띄운다.
  * pendingLeave가 있으면 확인 시트를 연다. confirmLeave는 미뤄 둔 이동을 실행하고, cancelLeave는 머문다.
  */
 export const useLeaveGuard = (enabled: boolean) => {
-  const router = useRouter();
   const [pendingLeave, setPendingLeave] = useState<LeaveAction | null>(null);
   const leavingRef = useRef(false);
   const hasSentinelRef = useRef(false);
@@ -43,7 +41,7 @@ export const useLeaveGuard = (enabled: boolean) => {
 
       event.preventDefault();
       event.stopPropagation();
-      setPendingLeave(() => () => router.push(`${url.pathname}${url.search}${url.hash}`));
+      setPendingLeave(() => () => anchor.click());
     };
 
     // Next 라우터가 history.state에 경로 정보를 두므로 같은 state로 쌓는다.
@@ -67,7 +65,7 @@ export const useLeaveGuard = (enabled: boolean) => {
       document.removeEventListener("click", handleClick, true);
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [enabled, router]);
+  }, [enabled]);
 
   // 닫기 버튼처럼 앱이 직접 이동할 때. 작성 중이 아니면 바로 이동한다.
   const requestLeave = useCallback(

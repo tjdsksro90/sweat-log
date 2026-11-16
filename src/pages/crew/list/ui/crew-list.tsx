@@ -1,7 +1,7 @@
 import { UsersThreeIcon } from "@phosphor-icons/react/ssr";
-import Link from "next/link";
 
 import type { CrewSummary } from "@/entities/crew/model/crew";
+import { AppLink } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { EmptyState } from "@/shared/ui/empty-state";
@@ -33,7 +33,7 @@ export function CrewList({ crews }: { crews: CrewSummary[] }) {
                 <Button
                   role="link"
                   variant="outline"
-                  render={<Link href={`/crews/${crew.id}`} />}
+                  render={<AppLink href={`/crews/${crew.id}`} />}
                   nativeButton={false}
                   aria-label={`${crew.name} 크루 보기`}
                 >

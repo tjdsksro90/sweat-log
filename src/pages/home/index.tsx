@@ -1,7 +1,6 @@
-import Link from "next/link";
-
 import { getMyProfile } from "@/entities/profile/api/get-my-profile";
 import { getWeeklySummary } from "@/entities/workout/api/server-queries";
+import { AppLink } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
 
@@ -14,7 +13,7 @@ export async function HomePage() {
     <PageLayout
       title="홈"
       action={
-        <Button render={<Link href="/workouts/new" />} nativeButton={false} role="link">
+        <Button render={<AppLink href="/workouts/new" />} nativeButton={false} role="link">
           기록하기
         </Button>
       }

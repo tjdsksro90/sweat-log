@@ -1,8 +1,8 @@
 import { SneakerIcon } from "@phosphor-icons/react/ssr";
-import Link from "next/link";
 
 import type { WorkoutPage } from "@/entities/workout/model/contracts";
 import { WorkoutCard } from "@/entities/workout/ui/workout-card";
+import { AppLink } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/empty-state";
 
@@ -30,7 +30,7 @@ export function CrewFeed({ crewId, page, hasCursor }: { crewId: string; page: Wo
       {(hasCursor || page.nextCursor) && (
         <nav aria-label="크루 피드 페이지" className="flex flex-wrap gap-3">
           {hasCursor && (
-            <Button variant="ghost" role="link" render={<Link href={`/crews/${crewId}`} />} nativeButton={false}>
+            <Button variant="ghost" role="link" render={<AppLink href={`/crews/${crewId}`} />} nativeButton={false}>
               최신 기록으로
             </Button>
           )}
@@ -38,7 +38,9 @@ export function CrewFeed({ crewId, page, hasCursor }: { crewId: string; page: Wo
             <Button
               variant="outline"
               role="link"
-              render={<Link href={`/crews/${crewId}?cursor=${encodeURIComponent(page.nextCursor)}#crew-feed-title`} />}
+              render={
+                <AppLink href={`/crews/${crewId}?cursor=${encodeURIComponent(page.nextCursor)}#crew-feed-title`} />
+              }
               nativeButton={false}
             >
               이전 기록 보기
