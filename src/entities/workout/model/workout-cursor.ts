@@ -15,9 +15,11 @@ const fromBase64Url = (value: string) => atob(value.replaceAll("-", "+").replace
 export const encodeWorkoutCursor = (cursor: WorkoutCursor) =>
   toBase64Url(JSON.stringify([cursor.workoutDate, cursor.createdAt, cursor.id]));
 
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+// 연도 0000은 JS Date는 받지만 Postgres date는 거부한다(서기 1년 전은 BC 표기).
+const DATE_PATTERN = /^(?!0000)\d{4}-\d{2}-\d{2}$/;
 // PostgREST가 주는 timestamptz 모양: 2026-11-14T06:10:00.123456+00:00
-const TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/;
+// 오프셋은 Postgres가 받는 ±15:59까지만. +16:00 이상은 JS Date는 받아도 DB에서 형 변환 오류가 난다.
+const TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-](0\d|1[0-5]):[0-5]\d)$/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // 2026-02-30처럼 모양만 맞는 날짜는 Date가 3월로 넘겨 버리므로 되돌린 값과 비교한다.
