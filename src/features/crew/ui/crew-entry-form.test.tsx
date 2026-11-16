@@ -22,6 +22,35 @@ describe("크루 생성·가입 폼", () => {
     expect(screen.getByLabelText(label)).toHaveAttribute("aria-invalid", "true");
   });
 
+  it.each([
+    { mode: "create" as const, label: "크루 이름", button: "크루 만들기", value: "가".repeat(31) },
+    { mode: "join" as const, label: "초대 코드", button: "코드로 가입하기", value: "ABCDEF01" },
+  ])("$mode 서버 오류 뒤에도 입력값을 남겨 고쳐서 다시 낼 수 있다", async ({ mode, label, button, value }) => {
+    const user = userEvent.setup();
+    const action = vi.fn(async (_state: CrewFormState, _data: FormData) => ({ error: "다시 확인해 주세요." }));
+    render(<CrewEntryForm mode={mode} action={action} />);
+    await user.type(screen.getByLabelText(label), value);
+    await user.click(screen.getByRole("button", { name: button }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("다시 확인해 주세요.");
+    const input = screen.getByLabelText(label);
+    expect(input).toHaveValue(value);
+    expect(input).toHaveAccessibleDescription(expect.stringContaining("다시 확인해 주세요."));
+
+    await user.type(input, "2");
+    await user.click(screen.getByRole("button", { name: button }));
+    await vi.waitFor(() => expect(action).toHaveBeenCalledTimes(2));
+    expect(action.mock.calls[1][1].get(mode === "create" ? "name" : "inviteCode")).toBe(`${value}2`);
+  });
+
+  it("이동 없이 성공하면 입력을 비운다", async () => {
+    const user = userEvent.setup();
+    const action = vi.fn(async () => ({ error: null }));
+    render(<CrewEntryForm mode="create" action={action} />);
+    await user.type(screen.getByLabelText("크루 이름"), "새벽 러너");
+    await user.click(screen.getByRole("button", { name: "크루 만들기" }));
+    await vi.waitFor(() => expect(screen.getByLabelText("크루 이름")).toHaveValue(""));
+  });
+
   it("처리 중에는 중복 제출을 막는다", async () => {
     const user = userEvent.setup();
     let finish!: (state: CrewFormState) => void;
