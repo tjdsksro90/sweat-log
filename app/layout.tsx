@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
 
 import { QueryProvider } from "@/shared/lib/react-query/query-provider";
+import { THEME_INIT_SCRIPT } from "@/shared/lib/theme/theme";
+import { ThemeProvider } from "@/shared/lib/theme/theme-provider";
 
 import "@/app/styles/globals.css";
 
@@ -27,6 +29,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: 첫 페인트 전 실행하는 고정 스크립트이며 사용자 입력을 포함하지 않는다. */}
+        <script id="theme-init" dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <link
           as="style"
           crossOrigin="anonymous"
@@ -35,7 +39,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body suppressHydrationWarning>
-        <QueryProvider>{children}</QueryProvider>
+        <ThemeProvider>
+          <QueryProvider>{children}</QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
