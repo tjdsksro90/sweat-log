@@ -98,6 +98,65 @@ describe("WorkoutForm", () => {
   });
 });
 
+describe("WorkoutForm 수정", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // 크루를 나가서 지금 크루 구성원에는 없는 동행자
+  const LEFT_COMPANION = { nickname: "알 수 없음", userId: "00000000-0000-0000-0000-00000000000d" };
+
+  const renderEditForm = () => {
+    const saveWorkout = vi.fn().mockResolvedValue({ id: "workout-1", ok: true });
+    const initial = createWorkoutFormValues(TODAY, "other");
+    render(
+      <WorkoutForm
+        title="기록 수정"
+        initialValues={{
+          ...initial,
+          companionIds: [CREW.members[0].userId, LEFT_COMPANION.userId],
+          crewId: CREW.id,
+          duration: { ...initial.duration, minutes: "30" },
+          id: "workout-1",
+        }}
+        crews={[CREW]}
+        existingCompanions={[{ nickname: "지은", userId: CREW.members[0].userId }, LEFT_COMPANION]}
+        today={TODAY}
+        closeHref="/workouts/workout-1"
+        saveWorkout={saveWorkout}
+      />,
+    );
+    return { saveWorkout, user: userEvent.setup() };
+  };
+
+  const goToFinish = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "다음" }));
+  };
+
+  it("크루를 나간 동행자도 선택된 채로 보이고, 그대로 저장된다", async () => {
+    const { saveWorkout, user } = renderEditForm();
+    await goToFinish(user);
+
+    expect(screen.getByRole("button", { name: "알 수 없음" })).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: "기록 저장" }));
+
+    expect(saveWorkout).toHaveBeenCalledWith(
+      expect.objectContaining({ companionIds: [CREW.members[0].userId, LEFT_COMPANION.userId] }),
+    );
+  });
+
+  it("크루를 나간 동행자를 뺄 수 있다", async () => {
+    const { saveWorkout, user } = renderEditForm();
+    await goToFinish(user);
+
+    await user.click(screen.getByRole("button", { name: "알 수 없음" }));
+    await user.click(screen.getByRole("button", { name: "기록 저장" }));
+
+    expect(saveWorkout).toHaveBeenCalledWith(expect.objectContaining({ companionIds: [CREW.members[0].userId] }));
+  });
+});
+
 describe("WorkoutForm 이동 주입", () => {
   beforeEach(() => {
     vi.clearAllMocks();

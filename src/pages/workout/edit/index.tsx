@@ -19,6 +19,10 @@ export async function EditWorkoutPage({ workoutId }: { workoutId: string }) {
       title="기록 수정"
       initialValues={fromWorkoutDetail(detail)}
       crews={crews}
+      existingCompanions={detail.companions.map((companion) => ({
+        userId: companion.id,
+        nickname: companion.nickname,
+      }))}
       today={getTodayInSeoul()}
       closeHref={`/workouts/${detail.id}`}
       saveWorkout={saveWorkout}

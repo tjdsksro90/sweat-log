@@ -221,6 +221,7 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
       author: { ...DEMO_USER },
       crew: value.crewId ? { id: DEMO_CREW.id, name: DEMO_CREW.name } : null,
       companions: companionIds.map((id) => ({
+        user_id: id,
         profile: { id, nickname: DEMO_CREW.members.find((member) => member.userId === id)?.nickname ?? "친구" },
       })),
       run: value.run

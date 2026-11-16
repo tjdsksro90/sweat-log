@@ -52,7 +52,10 @@ export const createSampleData = (now: Date = new Date()): DemoState => {
       user_id: DEMO_USER.id,
       author: { ...DEMO_USER },
       crew: { id: DEMO_CREW.id, name: DEMO_CREW.name },
-      companions: day % 2 === 0 ? [{ profile: { id: DEMO_CREW.members[1].userId, nickname: "지수" } }] : [],
+      companions:
+        day % 2 === 0
+          ? [{ user_id: DEMO_CREW.members[1].userId, profile: { id: DEMO_CREW.members[1].userId, nickname: "지수" } }]
+          : [],
       run:
         kind === "run" ? { distance_meters: 5000 + (day % 4) * 500, duration_seconds: 1800 + (day % 4) * 180 } : null,
       sets:
@@ -88,7 +91,7 @@ export const createSampleData = (now: Date = new Date()): DemoState => {
       id: sampleId("50000000", index),
       user_id: member.userId,
       author: { id: member.userId, nickname: member.nickname ?? "친구" },
-      companions: index === 0 ? [{ profile: { ...DEMO_USER } }] : [],
+      companions: index === 0 ? [{ user_id: DEMO_USER.id, profile: { ...DEMO_USER } }] : [],
     });
   }
   return { version: 1, workouts, comments };
