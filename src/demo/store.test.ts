@@ -212,7 +212,6 @@ describe("기록과 댓글 변경", () => {
       input({ run: null }),
       input({ id: friend?.id }),
       input({ crewId: "20000000-0000-4000-8000-000000000099" }),
-      input({ companionIds: [DEMO_USER.id] }),
       input({ companionIds: ["10000000-0000-4000-8000-000000000099"] }),
     ]) {
       expect((await store.saveWorkout(bad)).ok).toBe(false);
@@ -220,6 +219,47 @@ describe("기록과 댓글 변경", () => {
     expect((await store.deleteWorkout(friend?.id ?? "")).ok).toBe(false);
     expect((await store.deleteWorkout("unknown")).ok).toBe(false);
     expect(await allItems(store, DEMO_CREW.id)).toEqual(before);
+  });
+
+  it("동행자에 내가 있으면 제외하고 친구만 저장한다", async () => {
+    const store = makeStore();
+    const saved = await store.saveWorkout(input({ companionIds: [DEMO_USER.id] }));
+    if (!saved.ok) throw new Error(saved.error);
+    expect((await store.getWorkoutDetail(saved.id))?.companions).toEqual([]);
+    expect(
+      await store.saveWorkout(input({ id: saved.id, companionIds: [DEMO_USER.id, DEMO_CREW.members[1].userId] })),
+    ).toEqual({ ok: true, id: saved.id });
+    expect((await store.getWorkoutDetail(saved.id))?.companions.map((person) => person.id)).toEqual([
+      DEMO_CREW.members[1].userId,
+    ]);
+  });
+
+  it("댓글은 UUID, 본문, 기록 접근 순서로 검증한다", async () => {
+    const store = makeStore();
+    const missingId = "30000000-0000-4000-8000-000000000099";
+    const create = (workoutId: string, body: string) =>
+      store.createComment(INITIAL_COMMENT_FORM_STATE, form({ workoutId, body }));
+    expect(await create("invalid", "")).toEqual({ success: false, error: "운동 기록을 다시 확인해 주세요." });
+    expect(await create(missingId, "")).toEqual({ success: false, error: "댓글은 1~500자로 적어 주세요." });
+    expect(await create(missingId, "응원해요")).toEqual({
+      success: false,
+      error: "댓글을 작성하지 못했어요. 기록을 볼 수 있는지 확인하고 다시 시도해 주세요.",
+    });
+    expect(await store.getWorkoutComments(missingId)).toEqual([]);
+  });
+
+  it("열람할 수 없는 기록에는 댓글을 작성하지 않는다", async () => {
+    const sample = createSampleData(NOW);
+    const hidden = sample.workouts.find((row) => row.user_id !== DEMO_USER.id && row.companions.length === 0);
+    if (!hidden) throw new Error("친구 기록 없음");
+    hidden.crew = null;
+    const storage = memoryStorage();
+    storage.setItem(DEMO_STORAGE_KEY, JSON.stringify(sample));
+    const store = createDemoStore({ now: () => NOW, storage: () => storage });
+    expect(
+      await store.createComment(INITIAL_COMMENT_FORM_STATE, form({ workoutId: hidden.id, body: "응원해요" })),
+    ).toEqual({ success: false, error: "댓글을 작성하지 못했어요. 기록을 볼 수 있는지 확인하고 다시 시도해 주세요." });
+    expect(await store.getWorkoutComments(hidden.id)).toEqual([]);
   });
 
   it("댓글 작성·삭제 시 개수를 갱신하고 남의 댓글 삭제와 잘못된 입력을 거부한다", async () => {

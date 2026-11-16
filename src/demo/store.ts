@@ -204,9 +204,8 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
     const previous = value.id ? data.workouts.find((row) => row.id === value.id) : undefined;
     if (value.id && (!previous || previous.user_id !== DEMO_USER.id)) return failure("workout_not_found");
     if (value.crewId !== null && value.crewId !== DEMO_CREW.id) return failure("invalid_crew");
-    if (
-      value.companionIds.some((id) => id === DEMO_USER.id || !DEMO_CREW.members.some((member) => member.userId === id))
-    )
+    const companionIds = value.companionIds.filter((id) => id !== DEMO_USER.id);
+    if (companionIds.some((id) => !DEMO_CREW.members.some((member) => member.userId === id)))
       return failure("invalid_companion");
     const id = previous?.id ?? crypto.randomUUID();
     const row: WorkoutDetailRow = {
@@ -221,7 +220,7 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
       user_id: DEMO_USER.id,
       author: { ...DEMO_USER },
       crew: value.crewId ? { id: DEMO_CREW.id, name: DEMO_CREW.name } : null,
-      companions: value.companionIds.map((id) => ({
+      companions: companionIds.map((id) => ({
         profile: { id, nickname: DEMO_CREW.members.find((member) => member.userId === id)?.nickname ?? "친구" },
       })),
       run: value.run
@@ -254,11 +253,20 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
   const createComment = async (_state: CommentFormState, formData: FormData): Promise<CommentFormState> => {
     const workoutId = formData.get("workoutId");
     const body = formData.get("body");
-    if (!isUuid(workoutId) || !read().workouts.some((row) => row.id === workoutId))
-      return { error: "운동 기록을 다시 확인해 주세요.", success: false };
+    if (!isUuid(workoutId)) return { error: "운동 기록을 다시 확인해 주세요.", success: false };
     const error = validateCommentBody(body);
     if (error || typeof body !== "string") return { error, success: false };
     const data = read();
+    if (
+      !data.workouts.some(
+        (row) =>
+          row.id === workoutId &&
+          (row.user_id === DEMO_USER.id ||
+            row.companions.some(({ profile }) => profile?.id === DEMO_USER.id) ||
+            row.crew?.id === DEMO_CREW.id),
+      )
+    )
+      return { error: "댓글을 작성하지 못했어요. 기록을 볼 수 있는지 확인하고 다시 시도해 주세요.", success: false };
     const comment: WorkoutComment = {
       id: crypto.randomUUID(),
       userId: DEMO_USER.id,
