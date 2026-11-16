@@ -142,6 +142,89 @@ begin
   assert (select count(*) from public.workout_comments) = 1, 'A는 B의 댓글을 본다';
 end $$;
 
+-- A는 자기 기록에 달린 댓글이라도 B의 댓글은 지울 수 없다(조용히 0건 삭제)
+insert into public.workout_comments (workout_id, body) select crew_workout, '고마워!' from ctx;
+
+do $$
+declare
+  deleted integer;
+begin
+  delete from public.workout_comments where user_id = '00000000-0000-0000-0000-00000000000b';
+  get diagnostics deleted = row_count;
+  assert deleted = 0, 'A는 B의 댓글을 지울 수 없다';
+  assert (select count(*) from public.workout_comments) = 2, 'B의 댓글은 그대로 남는다';
+end $$;
+
+-- 크루장 A는 크루를 나갈 수 없다(조용히 0건 삭제)
+do $$
+declare
+  deleted integer;
+begin
+  delete from public.crew_members
+  where crew_id = (select crew_id from ctx) and user_id = '00000000-0000-0000-0000-00000000000a';
+  get diagnostics deleted = row_count;
+  assert deleted = 0, '크루장은 크루를 나갈 수 없다';
+  assert (select count(*) from public.crew_members where user_id = '00000000-0000-0000-0000-00000000000a') = 1,
+    '크루장은 여전히 owner로 남아 있다';
+end $$;
+
+-- 다시 B: 자기 댓글은 지우고, 남의 댓글은 못 지운다
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+
+insert into public.workout_comments (workout_id, body) select crew_workout, '오타 났다' from ctx;
+
+do $$
+declare
+  deleted integer;
+begin
+  delete from public.workout_comments where user_id = '00000000-0000-0000-0000-00000000000a';
+  get diagnostics deleted = row_count;
+  assert deleted = 0, 'B는 A의 댓글을 지울 수 없다';
+
+  delete from public.workout_comments where body = '오타 났다';
+  get diagnostics deleted = row_count;
+  assert deleted = 1, 'B는 자기 댓글을 지울 수 있다';
+  assert (select count(*) from public.workout_comments) = 2, '지운 댓글만 사라지고 A와 B의 댓글 2개가 남는다';
+end $$;
+
+-- B가 크루를 나가면 그 크루와 크루에 공유된 기록·댓글에 접근할 수 없다
+do $$
+declare
+  deleted integer;
+begin
+  delete from public.crew_members
+  where crew_id = (select crew_id from ctx) and user_id = '00000000-0000-0000-0000-00000000000b';
+  get diagnostics deleted = row_count;
+  assert deleted = 1, '일반 구성원은 크루를 나갈 수 있다';
+
+  assert (select count(*) from public.crews) = 0, '나간 B는 크루를 못 본다';
+  assert (select count(*) from public.crew_members) = 0, '나간 B는 크루 구성원을 못 본다';
+  assert (select count(*) from public.workouts) = 0, '나간 B는 크루에 공유된 기록을 못 본다';
+  assert (select count(*) from public.run_details) = 0, '나간 B는 공유된 러닝 상세를 못 본다';
+  assert (select count(*) from public.workout_comments) = 0, '나간 B는 자기 것을 포함해 크루 기록의 댓글을 못 본다';
+  assert (select count(*) from public.profiles) = 1, '나간 B는 자기 프로필만 본다';
+end $$;
+
+-- 나간 B는 크루 기록에 댓글을 쓸 수 없다
+do $$
+begin
+  begin
+    insert into public.workout_comments (workout_id, body) select crew_workout, '아직 있나?' from ctx;
+    raise exception '나간 크루의 기록에 댓글이 막히지 않았다';
+  exception when insufficient_privilege then
+    null;
+  end;
+end $$;
+
+-- 다시 A: B가 나가도 기록과 B가 남긴 댓글은 그대로다
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+
+do $$
+begin
+  assert (select count(*) from public.crew_members) = 1, 'B가 나가고 A만 남는다';
+  assert (select count(*) from public.workout_comments) = 2, 'B가 나가도 남긴 댓글은 지워지지 않는다';
+end $$;
+
 -- 익명 사용자는 아무것도 못 본다
 reset role;
 set local role anon;
