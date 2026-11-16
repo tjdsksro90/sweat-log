@@ -16,6 +16,11 @@ describe("WorkoutCard", () => {
       expect(screen.getByText(text)).toBeInTheDocument();
     }
   });
+  it("제목이 짧아도 제목 링크가 44px 이상 터치 영역을 가진다", () => {
+    render(<WorkoutCard workout={{ ...SAMPLE_WORKOUTS[0], title: "A" }} />);
+    const link = screen.getByRole("link", { name: "A" });
+    expect(link).toHaveClass("min-h-11", "min-w-11");
+  });
   it("헬스의 총 볼륨을 표시한다", () => {
     render(<WorkoutCard workout={SAMPLE_WORKOUTS[1]} />);
     expect(screen.getByText("3,720")).toBeInTheDocument();

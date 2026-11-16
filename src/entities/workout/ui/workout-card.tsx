@@ -18,7 +18,7 @@ export function WorkoutCard({ workout }: { workout: WorkoutListItem }) {
         </div>
         <h3 className="break-words font-semibold text-title">
           <AppLink
-            className="inline-flex min-h-11 items-center rounded-md underline-offset-4 hover:underline focus-visible:outline-2"
+            className="inline-flex min-h-11 min-w-11 items-center rounded-md underline-offset-4 hover:underline focus-visible:outline-2"
             href={`/workouts/${workout.id}`}
           >
             {workout.title || `${WORKOUT_KIND_LABELS[workout.kind]} 기록`}
