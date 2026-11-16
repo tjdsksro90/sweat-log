@@ -107,7 +107,6 @@ function ExerciseCard({
                           }),
                         )
                       }
-                      placeholder="맨몸"
                       autoComplete="off"
                     />
                   )}
