@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getListHref, parseListState, shiftMonth } from "./filters";
+import { getListHref, getNewWorkoutHref, parseListState, shiftMonth } from "./filters";
 
 describe("목록 URL", () => {
   it("잘못된 검색 조건은 기본값으로 바꾼다", () => {
@@ -29,5 +29,9 @@ describe("목록 URL", () => {
   it("이전 달과 다음 달은 연도를 넘는다", () => {
     expect(shiftMonth("2026-01", -1)).toBe("2025-12");
     expect(shiftMonth("2026-12", 1)).toBe("2027-01");
+  });
+  it("기록하기 링크는 고른 운동 종류를 넘기고, 전체면 넘기지 않는다", () => {
+    expect(getNewWorkoutHref("strength")).toBe("/workouts/new?kind=strength");
+    expect(getNewWorkoutHref("all")).toBe("/workouts/new");
   });
 });

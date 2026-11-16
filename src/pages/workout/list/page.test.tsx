@@ -14,7 +14,7 @@ describe("목록 조회 연결", () => {
     vi.mocked(getWorkoutPage).mockResolvedValue({ items: SAMPLE_WORKOUTS.slice(0, 1), nextCursor: "next" });
     render(await WorkoutListPage({ searchParams: Promise.resolve({ kind: "run", cursor: "opaque" }) }));
     expect(getWorkoutPage).toHaveBeenLastCalledWith({ kind: "run", cursor: "opaque" });
-    expect(screen.getByRole("link", { name: "기록하기" })).toHaveAttribute("href", "/workouts/new");
+    expect(screen.getByRole("link", { name: "기록하기" })).toHaveAttribute("href", "/workouts/new?kind=run");
     expect(screen.getByRole("button", { name: "더 보기" })).toBeInTheDocument();
   });
   it("달력은 월의 모든 페이지를 읽어 마지막 페이지의 운동도 표시한다", async () => {
@@ -34,5 +34,6 @@ describe("목록 조회 연결", () => {
     });
     expect(screen.getByRole("button", { name: "2026-11-11, 기타" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "더 보기" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "기록하기" })).toHaveAttribute("href", "/workouts/new");
   });
 });

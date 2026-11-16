@@ -26,3 +26,7 @@ export const shiftMonth = (month: string, offset: number) => {
   const [year, number] = month.split("-").map(Number);
   return new Date(Date.UTC(year, number - 1 + offset, 1)).toISOString().slice(0, 7);
 };
+
+// 종류 필터를 고른 채 기록하러 가면 작성 화면이 그 종류로 시작한다.
+export const getNewWorkoutHref = (kind: ListState["kind"]) =>
+  kind === "all" ? "/workouts/new" : `/workouts/new?${new URLSearchParams({ kind })}`;

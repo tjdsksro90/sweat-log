@@ -1,10 +1,15 @@
+import { isWorkoutKind } from "@/entities/workout/model/types";
 import { saveWorkout } from "@/features/workout/api/workout-actions";
 import { createWorkoutFormValues, getTodayInSeoul } from "@/features/workout/model/workout-form";
 import { requireUser } from "@/shared/api/supabase/require-user";
 import { WorkoutForm } from "@/widgets/workout-form";
 import { getWorkoutFormCrews } from "@/widgets/workout-form/api/get-form-crews";
 
-export async function NewWorkoutPage() {
+type SearchParams = Record<string, string | string[] | undefined>;
+
+// 목록에서 고른 종류(?kind=strength)를 처음 선택값으로 쓴다. 모르는 값이면 기본값(러닝)으로 둔다.
+export async function NewWorkoutPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const { kind } = await searchParams;
   const { user } = await requireUser();
   const crews = await getWorkoutFormCrews(user.id);
   const today = getTodayInSeoul();
@@ -12,7 +17,7 @@ export async function NewWorkoutPage() {
   return (
     <WorkoutForm
       title="기록하기"
-      initialValues={createWorkoutFormValues(today)}
+      initialValues={createWorkoutFormValues(today, typeof kind === "string" && isWorkoutKind(kind) ? kind : undefined)}
       crews={crews}
       today={today}
       closeHref="/workouts"
