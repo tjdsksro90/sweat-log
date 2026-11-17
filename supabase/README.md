@@ -8,7 +8,8 @@ profiles ─< crew_members >─ crews            (초대 코드로 가입)
 profiles ─< workouts ─┬─ run_details         (러닝: 거리, 시간)
                       ├─< strength_sets      (헬스: 종목, 세트, 무게, 횟수)
                       ├─< workout_companions (함께한 크루 친구)
-                      └─< workout_comments
+                      ├─< workout_comments
+                      └─< workout_photos     (사진 메타. 파일은 Storage workout-photos 버킷)
 profiles ─< push_subscriptions               (브라우저별 푸시 알림 구독)
 ```
 
@@ -20,6 +21,7 @@ profiles ─< push_subscriptions               (브라우저별 푸시 알림 �
 - 크루 생성과 가입은 `create_crew`, `join_crew_by_code` 함수로만 한다.
 - 권한 확인 함수는 노출되지 않는 `private` 스키마에 둔다.
 - 푸시 구독은 본인 것만 읽고 지운다. 저장은 `save_push_subscription`으로만 하며(직접 insert·update 불가), 주요 브라우저 푸시 서비스 주소만 받고 사람마다 최근 10개까지만 남긴다. 같은 브라우저(endpoint)로 다른 계정이 알림을 켜면 주인이 바뀐다. 남의 구독은 서버 전용 secret key(service role)로 발송할 때만 읽는다.
+- 사진 파일은 비공개 버킷 `workout-photos`의 `{작성자}/{기록}/{파일}` 경로에 둔다. 사진 행과 파일은 그 기록을 볼 수 있는 사람만 읽고, 올리기·지우기는 작성자만 한다. 행이 없는 파일은 작성자 말고는 읽지 못한다. 앱은 서명 URL로만 보여 준다.
 
 ## 로컬 개발
 
@@ -48,6 +50,7 @@ docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < su
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/running-stats.sql
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/strength-records.sql
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/push-subscriptions.sql
+docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/workout-photos.sql
 ```
 
 ## 기록 저장·목록 함수
@@ -60,3 +63,5 @@ docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < su
 - 러닝 통계 두 함수는 내가 작성했거나 함께한 친구로 들어간 러닝만 센다. 크루에 공유만 된 친구의 러닝은 넣지 않는다. 앱에서는 `getRunningStats`가 부르고, 체험은 같은 규칙의 `buildRunningStats`(`src/entities/workout/model/running-stats.ts`)로 집계한다.
 - `get_strength_records(p_today date, p_limit integer default 5)`: 내가 작성했거나 동행자로 포함된 헬스의 종목별 최고 무게·최초 달성 날짜·기록 ID·운동 횟수를 반환한다. 기준일 뒤의 기록과 크루 공유만 받은 기록은 제외한다. 이름의 공백을 모두 제거해 합치고, 서로 다른 운동 기록 수가 많은 순으로 최대 `p_limit`개(1~20)를 반환한다. 같은 무게는 날짜·작성 시각·ID 순으로 처음 기록을 택한다. 무게가 모두 비어 있으면 `max_weight_kg`는 null이고 날짜는 첫 맨몸 기록 날짜다. 실제 앱은 RPC로 집계하며, 데모만 `entities/exercise/model/build-strength-records.ts`의 같은 규칙을 사용한다.
 - 모두 `security invoker`라서 권한은 RLS가 판단한다. 기록 삭제는 함수 없이 `workouts`를 지우면 상세가 cascade로 지워진다.
+- 사진 행도 cascade로 지워지지만 Storage 파일은 SQL로 지울 수 없다(`storage.protect_delete`). 기록 삭제 Server Action이 지운 뒤 Storage API로 기록 폴더를 비운다.
+- 사진은 기록 하나에 4장까지다. 넣을 때 트리거가 기록 행을 잠그고 세며, 넘으면 `too_many_photos`를 낸다. 순서(`position`)도 트리거가 마지막 다음 번호로 매긴다.
