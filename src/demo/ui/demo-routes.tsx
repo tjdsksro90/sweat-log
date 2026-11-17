@@ -5,16 +5,19 @@ import { useState } from "react";
 import { FileDashedIcon } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
+import type { Routine } from "@/entities/routine/model/routine";
 import type { WorkoutDetail } from "@/entities/workout/model/contracts";
 import { isWorkoutKind } from "@/entities/workout/model/types";
 import { getKstToday } from "@/entities/workout/model/weekly-summary";
 import type { CrewFormAction } from "@/features/crew/model/crew-form";
+import { createRoutineFormValues } from "@/features/workout/model/routine-form";
 import { createWorkoutFormValues, fromWorkoutDetail, getTodayInSeoul } from "@/features/workout/model/workout-form";
 import type { CommentAction } from "@/features/workout-comment/model/comment-form";
 import { WorkoutCommentsView } from "@/features/workout-comment/ui/workout-comments-view";
 import { CrewDetailScreen } from "@/pages/crew/detail/ui/crew-detail-screen";
 import { CrewListScreen } from "@/pages/crew/list/ui/crew-list-screen";
 import { HomeScreen } from "@/pages/home/ui/home-screen";
+import { RoutineListScreen } from "@/pages/routine/list/ui/routine-list-screen";
 import { SettingsScreen } from "@/pages/settings/ui/settings-screen";
 import { WorkoutDetailScreen } from "@/pages/workout/detail/ui/workout-detail-screen";
 import { parseListState } from "@/pages/workout/list/model/filters";
@@ -23,7 +26,7 @@ import { AppLink } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
-import { WorkoutForm, type WorkoutFormCrew } from "@/widgets/workout-form";
+import { RoutineForm, WorkoutForm, type WorkoutFormCrew } from "@/widgets/workout-form";
 
 import type { DemoLocation, SearchParams } from "../model/demo-path";
 import { loadWorkoutList } from "../model/workout-list";
@@ -79,6 +82,12 @@ export function DemoRoutes({ location }: { location: DemoLocation }) {
       );
     case "settings":
       return <DemoSettings />;
+    case "routines":
+      return <DemoRoutineList />;
+    case "routine-new":
+      return <DemoRoutineNew from={searchParams.from} />;
+    case "routine-edit":
+      return <DemoRoutineEdit key={route.routineId} routineId={route.routineId} />;
     case "not-found":
       return <DemoNotFound title="땀일기" message="찾는 화면이 없어요." />;
   }
@@ -135,28 +144,36 @@ function DemoWorkoutDetail({ workoutId }: { workoutId: string }) {
 
 function DemoWorkoutNew({ kind }: { kind: SearchParams[string] }) {
   const crews = useDemoQuery(["form-crews"], () => store.getWorkoutFormCrews());
-  if (!crews.data) return null;
+  const routines = useDemoQuery(["routines"], () => store.getRoutines());
+  if (!crews.data || !routines.data) return null;
   return (
-    <DemoWorkoutForm crews={crews.data} kind={typeof kind === "string" && isWorkoutKind(kind) ? kind : undefined} />
+    <DemoWorkoutForm
+      crews={crews.data}
+      routines={routines.data}
+      kind={typeof kind === "string" && isWorkoutKind(kind) ? kind : undefined}
+    />
   );
 }
 
 function DemoWorkoutEdit({ workoutId }: { workoutId: string }) {
   const workout = useDemoQuery(["workout", workoutId], () => store.getWorkoutDetail(workoutId));
   const crews = useDemoQuery(["form-crews"], () => store.getWorkoutFormCrews());
-  if (workout.isPending || !crews.data) return null;
+  const routines = useDemoQuery(["routines"], () => store.getRoutines());
+  if (workout.isPending || !crews.data || !routines.data) return null;
   // 실제 앱처럼 남의 기록은 수정 화면이 없는 것으로 본다.
   if (!workout.data?.isMine) return <DemoNotFound title="기록 수정" message="내가 쓴 기록만 고칠 수 있어요." />;
-  return <DemoWorkoutForm crews={crews.data} detail={workout.data} />;
+  return <DemoWorkoutForm crews={crews.data} routines={routines.data} detail={workout.data} />;
 }
 
 // 폼은 처음 값과 지금 값을 비교해 이탈을 확인하므로, 처음 값은 화면에 들어올 때 한 번만 만든다.
 function DemoWorkoutForm({
   crews,
+  routines,
   detail,
   kind,
 }: {
   crews: WorkoutFormCrew[];
+  routines: Routine[];
   detail?: WorkoutDetail;
   kind?: Parameters<typeof createWorkoutFormValues>[1];
 }) {
@@ -181,6 +198,7 @@ function DemoWorkoutForm({
       saveWorkout={actions.save}
       deleteWorkout={detail ? actions.remove : undefined}
       photoUnavailableMessage={DEMO_PHOTO_MESSAGE}
+      routines={routines}
     />
   );
 }
@@ -214,6 +232,64 @@ function DemoCrewDetail({ crewId, cursor }: { crewId: string; cursor?: string })
 function DemoSettings() {
   const notify = useDemoNotice();
   return <SettingsScreen nickname={DEMO_USER.nickname} logoutAction={() => notify(UNSUPPORTED_MESSAGE)} />;
+}
+
+function DemoRoutineList() {
+  const { data: routines } = useDemoQuery(["routines"], () => store.getRoutines());
+  return routines ? <RoutineListScreen routines={routines} /> : null;
+}
+
+// 실제 앱처럼 ?from=<기록 id>로 오면 볼 수 있는 헬스 기록의 구성으로 채운다.
+function DemoRoutineNew({ from }: { from: SearchParams[string] }) {
+  const workoutId = typeof from === "string" ? from : null;
+  const workout = useDemoQuery(["workout", workoutId], async () =>
+    workoutId ? store.getWorkoutDetail(workoutId) : null,
+  );
+  if (workout.isPending) return null;
+  const source =
+    workout.data?.kind === "strength" ? { exercises: workout.data.exercises, name: workout.data.title ?? "" } : {};
+  return <DemoRoutineForm title="새 루틴" initialValues={createRoutineFormValues(source)} />;
+}
+
+function DemoRoutineEdit({ routineId }: { routineId: string }) {
+  const routine = useDemoQuery(["routine", routineId], () => store.getRoutine(routineId));
+  if (routine.isPending) return null;
+  if (!routine.data)
+    return (
+      <DemoNotFound
+        title="루틴 고치기"
+        message="지웠거나 없는 루틴이에요."
+        backHref="/settings/routines"
+        backLabel="내 루틴으로"
+      />
+    );
+  return <DemoRoutineForm title="루틴 고치기" initialValues={createRoutineFormValues(routine.data)} canDelete />;
+}
+
+// 폼은 처음 값과 지금 값을 비교해 이탈을 확인하므로, 처음 값은 화면에 들어올 때 한 번만 만든다.
+function DemoRoutineForm({
+  title,
+  initialValues,
+  canDelete = false,
+}: {
+  title: string;
+  initialValues: ReturnType<typeof createRoutineFormValues>;
+  canDelete?: boolean;
+}) {
+  const refreshAfter = useRefreshAfter();
+  const [values] = useState(initialValues);
+  const [actions] = useState(() => ({
+    save: refreshAfter(store.saveRoutine, false),
+    remove: refreshAfter(store.deleteRoutine, false),
+  }));
+  return (
+    <RoutineForm
+      title={title}
+      initialValues={values}
+      saveRoutine={actions.save}
+      deleteRoutine={canDelete ? actions.remove : undefined}
+    />
+  );
 }
 
 function DemoNotFound({

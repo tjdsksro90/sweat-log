@@ -16,6 +16,9 @@ export type DemoRoute =
   | { name: "crews" }
   | { name: "crew-detail"; crewId: string }
   | { name: "settings" }
+  | { name: "routines" }
+  | { name: "routine-new" }
+  | { name: "routine-edit"; routineId: string }
   | { name: "not-found" };
 
 export type DemoLocation = {
@@ -58,6 +61,9 @@ const ROUTES: [RegExp, (match: RegExpMatchArray) => DemoRoute][] = [
   [/^\/crews$/, () => ({ name: "crews" })],
   [/^\/crews\/([^/]+)$/, (match) => ({ name: "crew-detail", crewId: match[1] })],
   [/^\/settings$/, () => ({ name: "settings" })],
+  [/^\/settings\/routines$/, () => ({ name: "routines" })],
+  [/^\/settings\/routines\/new$/, () => ({ name: "routine-new" })],
+  [/^\/settings\/routines\/([^/]+)$/, (match) => ({ name: "routine-edit", routineId: match[1] })],
 ];
 
 export const matchDemoRoute = (pathname: string): DemoRoute => {

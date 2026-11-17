@@ -43,6 +43,9 @@ describe("matchDemoRoute", () => {
     ["/crews", { name: "crews" }],
     ["/crews/c1", { name: "crew-detail", crewId: "c1" }],
     ["/settings", { name: "settings" }],
+    ["/settings/routines", { name: "routines" }],
+    ["/settings/routines/new", { name: "routine-new" }],
+    ["/settings/routines/r1", { name: "routine-edit", routineId: "r1" }],
     ["/workouts/abc/comments", { name: "not-found" }],
     ["/login", { name: "not-found" }],
   ])("%s → %o", (pathname, route) => {
