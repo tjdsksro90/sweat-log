@@ -7,6 +7,7 @@ import { THEME_INIT_SCRIPT } from "@/shared/lib/theme/theme";
 import { ThemeProvider } from "@/shared/lib/theme/theme-provider";
 
 import "@/app/fonts/pretendard/pretendard.css";
+import "@/app/fonts/pretendard/pretendard-fallback.css";
 import "@/app/styles/globals.css";
 
 export const metadata: Metadata = {
