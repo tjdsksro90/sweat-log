@@ -114,7 +114,9 @@
 @theme inline {
   --shadow-card: var(--elevation-card);
   --shadow-sheet: var(--elevation-sheet);
-  --font-sans: "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --font-sans:
+    "Pretendard Variable", "Pretendard", "Pretendard Fallback Malgun", "Pretendard Fallback Noto",
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
   --color-overlay: var(--overlay);
   --text-stat: 2.5rem;
   --text-stat--line-height: 1.1;
