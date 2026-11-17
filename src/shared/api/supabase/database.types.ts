@@ -350,6 +350,16 @@ export type Database = {
           workout_id: string;
         }[];
       };
+      get_strength_records: {
+        Args: { p_limit?: number; p_today: string };
+        Returns: {
+          exercise_name: string;
+          max_weight_kg: number;
+          workout_count: number;
+          workout_date: string;
+          workout_id: string;
+        }[];
+      };
       get_workout_streak: { Args: { p_today: string }; Returns: number };
       join_crew_by_code: {
         Args: { p_invite_code: string };

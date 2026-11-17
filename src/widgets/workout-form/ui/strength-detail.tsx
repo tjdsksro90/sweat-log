@@ -1,5 +1,7 @@
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 
+import { findExercise } from "@/entities/exercise/model/search-exercises";
+import { ExerciseNameInput } from "@/entities/exercise/ui/exercise-name-input";
 import {
   addExercise,
   addSet,
@@ -21,7 +23,6 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { FieldError } from "@/shared/ui/field";
-import { Input } from "@/shared/ui/input";
 import { NumberInput } from "@/shared/ui/number-input";
 
 import { FormField } from "./form-field";
@@ -43,6 +44,8 @@ function ExerciseCard({
   onChange: Update;
 }) {
   const label = `${index + 1}번째 종목`;
+  const bodyweight = findExercise(exercise.name)?.bodyweight;
+  const hintId = `exercise-${exercise.key}-bodyweight`;
   const nameError = errors[`${exerciseErrorKey(exercise.key)}.name`];
   const setsError = errors[`${exerciseErrorKey(exercise.key)}.sets`];
 
@@ -53,10 +56,10 @@ function ExerciseCard({
           <div className="min-w-0 flex-1">
             <FormField id={`exercise-${exercise.key}-name`} label={label} error={nameError}>
               {(control) => (
-                <Input
+                <ExerciseNameInput
                   {...control}
                   value={exercise.name}
-                  onChange={(event) => onChange((values) => renameExercise(values, exercise.key, event.target.value))}
+                  onValueChange={(name) => onChange((values) => renameExercise(values, exercise.key, name))}
                   placeholder="스쿼트"
                   autoComplete="off"
                 />
@@ -73,6 +76,10 @@ function ExerciseCard({
             <TrashIcon />
           </Button>
         </div>
+
+        <p id={hintId} role="status" className="text-caption text-muted-foreground empty:sr-only">
+          {bodyweight ? "맨몸 종목이에요. 추가 중량이 없다면 무게 칸을 비워 두세요." : ""}
+        </p>
 
         {/* 단위는 입력 안이 아니라 열 제목에 둔다. 좁은 화면에서도 100.25 같은 값이 다 보이게. */}
         <div aria-hidden="true" className={`${SET_ROW} -mb-2 text-caption text-muted-foreground`}>
@@ -99,6 +106,9 @@ function ExerciseCard({
                   {(control) => (
                     <NumberInput
                       {...control}
+                      aria-describedby={
+                        [control["aria-describedby"], bodyweight ? hintId : null].filter(Boolean).join(" ") || undefined
+                      }
                       value={set.weightKg}
                       onChange={(event) =>
                         onChange((values) =>

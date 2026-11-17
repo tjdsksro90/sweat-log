@@ -84,8 +84,14 @@ export function DemoRoutes({ location }: { location: DemoLocation }) {
 function DemoHome() {
   const { data: summary } = useDemoQuery(["summary"], () => store.getWeeklySummary());
   const { data: runningStats } = useDemoQuery(["running-stats"], () => store.getRunningStats());
-  return summary && runningStats ? (
-    <HomeScreen nickname={DEMO_USER.nickname} summary={summary} runningStats={runningStats} />
+  const { data: strengthRecords } = useDemoQuery(["strength-records"], () => store.getStrengthRecords());
+  return summary && runningStats && strengthRecords ? (
+    <HomeScreen
+      nickname={DEMO_USER.nickname}
+      summary={summary}
+      runningStats={runningStats}
+      strengthRecords={strengthRecords}
+    />
   ) : null;
 }
 
