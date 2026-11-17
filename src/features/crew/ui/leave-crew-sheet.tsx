@@ -21,11 +21,12 @@ export type LeaveCrewSheetProps = {
   action: (state: CrewFormState, formData: FormData) => Promise<CrewFormState>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  popupId: string;
   returnFocusRef: RefObject<HTMLButtonElement | null>;
 };
 
-// 크루 나가기 확인 시트. 시트 코드(Base UI Dialog)는 처음 열 때 불러오도록 leave-crew.tsx에서 지연 로딩한다.
-export function LeaveCrewSheet({ crewId, action, open, onOpenChange, returnFocusRef }: LeaveCrewSheetProps) {
+// 크루 나가기 확인 시트. 시트 코드(Base UI Dialog)는 처음 열 때 불러오도록 leave-crew.tsx에서 직접 import()해 지연 로딩한다.
+export function LeaveCrewSheet({ crewId, action, open, onOpenChange, popupId, returnFocusRef }: LeaveCrewSheetProps) {
   const [state, submit, pending] = useActionState(action, INITIAL_CREW_FORM_STATE);
   return (
     <BottomSheet
@@ -34,7 +35,7 @@ export function LeaveCrewSheet({ crewId, action, open, onOpenChange, returnFocus
         if (!pending) onOpenChange(nextOpen);
       }}
     >
-      <BottomSheetContent showCloseButton={!pending} finalFocus={returnFocusRef}>
+      <BottomSheetContent id={popupId} showCloseButton={!pending} finalFocus={returnFocusRef}>
         <BottomSheetHeader>
           <BottomSheetTitle>크루에서 나갈까요?</BottomSheetTitle>
           <BottomSheetDescription>
