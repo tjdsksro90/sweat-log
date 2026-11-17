@@ -7,13 +7,14 @@ import { ArrowCounterClockwiseIcon, ArrowSquareOutIcon } from "@phosphor-icons/r
 import { Button } from "@/shared/ui/button";
 
 import { DEMO_APP_PATH } from "../model/demo-path";
-import { reset } from "../store";
 
 // 체험 앱을 휴대폰 크기 창으로 띄운다. 같은 탭의 sessionStorage를 쓰므로 바깥에서 초기화하고 창만 다시 연다.
 export function DemoPreview() {
   const frameRef = useRef<HTMLIFrameElement>(null);
 
-  const restart = () => {
+  // 체험 저장소(샘플 데이터 포함)는 소개 화면에서 이 버튼에만 필요하므로 누를 때 불러온다.
+  const restart = async () => {
+    const { reset } = await import("../store");
     reset();
     frameRef.current?.contentWindow?.location.replace(DEMO_APP_PATH);
   };
