@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 
 import { FileDashedIcon } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -32,7 +32,9 @@ import { RoutineForm, WorkoutForm, type WorkoutFormCrew } from "@/widgets/workou
 import type { DemoLocation, SearchParams } from "../model/demo-path";
 import { loadWorkoutList } from "../model/workout-list";
 import { DEMO_USER } from "../sample-data";
+import type { DemoHomeData } from "../store";
 import * as store from "../store";
+import { useHydrated } from "./demo-location";
 import { UNSUPPORTED_MESSAGE, useDemoNotice } from "./demo-notice";
 
 // 저장소는 브라우저 메모리라 매번 다시 읽어도 싸다. 저장·삭제 뒤 화면이 바로 바뀌도록 항상 다시 읽는다.
@@ -59,11 +61,11 @@ const DEMO_PHOTO_MESSAGE = "체험에서는 사진을 올릴 수 없어요. 가�
 
 const unsupportedCrewAction: CrewFormAction = async () => ({ error: UNSUPPORTED_MESSAGE });
 
-export function DemoRoutes({ location }: { location: DemoLocation }) {
+export function DemoRoutes({ location, prerenderedHome }: { location: DemoLocation; prerenderedHome?: DemoHomeData }) {
   const { route, searchParams } = location;
   switch (route.name) {
     case "home":
-      return <DemoHome />;
+      return <DemoHome prerendered={prerenderedHome} />;
     case "workouts":
       return <DemoWorkoutList searchParams={searchParams} />;
     case "workout-new":
@@ -94,18 +96,38 @@ export function DemoRoutes({ location }: { location: DemoLocation }) {
   }
 }
 
-function DemoHome() {
-  const { data: summary } = useDemoQuery(["summary"], () => store.getWeeklySummary());
-  const { data: runningStats } = useDemoQuery(["running-stats"], () => store.getRunningStats());
-  const { data: strengthRecords } = useDemoQuery(["strength-records"], () => store.getStrengthRecords());
-  return summary && runningStats && strengthRecords ? (
+/**
+ * 서버와 hydration 첫 렌더는 서버가 미리 그린 샘플을 쓰고, 그 뒤로는 이 탭의 저장소를 동기로 읽는다.
+ * 처음 방문이면 두 값이 같아 DOM이 그대로 남는다. 홈에는 기록을 바꾸는 동작이 없어 들어올 때 읽고,
+ * 예전 조회(useQuery)처럼 창으로 돌아올 때 다시 읽는다. 홈을 열어 둔 채 자정이 지나도 오늘 기준으로 바뀐다.
+ */
+function DemoHome({ prerendered }: { prerendered?: DemoHomeData }) {
+  const hydrated = useHydrated();
+  const [readCount, readAgain] = useReducer((count: number) => count + 1, 0);
+  useEffect(() => {
+    const onReturn = () => {
+      if (document.visibilityState === "visible") readAgain();
+    };
+    window.addEventListener("focus", onReturn);
+    document.addEventListener("visibilitychange", onReturn);
+    return () => {
+      window.removeEventListener("focus", onReturn);
+      document.removeEventListener("visibilitychange", onReturn);
+    };
+  }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: readCount는 창으로 돌아올 때 다시 읽게 하는 신호다.
+  const { summary, runningStats, strengthRecords } = useMemo(
+    () => (hydrated || !prerendered ? store.readHome() : prerendered),
+    [hydrated, prerendered, readCount],
+  );
+  return (
     <HomeScreen
       nickname={DEMO_USER.nickname}
       summary={summary}
       runningStats={runningStats}
       strengthRecords={strengthRecords}
     />
-  ) : null;
+  );
 }
 
 function DemoWorkoutList({ searchParams }: { searchParams: SearchParams }) {

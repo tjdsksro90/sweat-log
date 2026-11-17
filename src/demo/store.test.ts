@@ -135,6 +135,19 @@ describe("데모 조회와 페이지", () => {
     if (detail?.run) detail.run.distanceMeters = 99;
     expect((await store.getWorkoutDetail(row.id))?.run?.distanceMeters).not.toBe(99);
   });
+
+  it("홈 묶음은 세 조회와 같은 값을 동기로 주고, 같은 날의 다른 시각에 만든 샘플과도 같다", async () => {
+    const store = makeStore();
+    expect(store.readHome()).toEqual({
+      today: TODAY,
+      summary: await store.getWeeklySummary(),
+      runningStats: await store.getRunningStats(),
+      strengthRecords: await store.getStrengthRecords(),
+    });
+    // 서버가 미리 그린 홈과 브라우저가 나중에 만든 샘플이 같은 날이면 화면이 바뀌지 않아야 한다.
+    const later = createDemoStore({ now: () => new Date(NOW.getTime() + 60 * 60 * 1000), storage: () => null });
+    expect(later.readHome()).toEqual(store.readHome());
+  });
 });
 
 describe("기록과 댓글 변경", () => {

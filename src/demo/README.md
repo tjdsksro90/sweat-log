@@ -39,19 +39,23 @@
 
 ```text
 app/demo/page.tsx        # /demo: 소개 + 휴대폰 크기 iframe(/demo/app) + "처음부터 다시"
-app/demo/app/page.tsx    # /demo/app: DemoApp을 Suspense 안에서 클라이언트로만 그린다
+app/demo/app/page.tsx    # /demo/app: 샘플 홈을 미리 그린 DemoApp + 가드 스크립트(10분 ISR)
 src/demo/model/          # 순수 로직(테스트 대상)
   demo-path.ts           #   실제 앱 경로 ↔ /demo/app?path=… 변환, 경로 → 화면 매칭
   workout-list.ts        #   목록·달력 조회(실제 목록 페이지와 같은 규칙)
+  prerender-guard.ts     #   미리 그린 홈이 맞지 않는 방문이면 hydration 전까지 숨기는 인라인 스크립트
 src/demo/ui/
   demo-app.tsx           #   AppNavigationProvider 주입, 링크 가로채기, 스크롤
+  demo-location.ts       #   ?path= 읽기(useSyncExternalStore), hydration 여부
   demo-routes.tsx        #   화면별로 저장소를 읽어 실제 *Screen·WorkoutForm에 넘긴다
   demo-notice.tsx        #   "체험에서는 지원하지 않아요" 안내
   demo-landing.tsx, demo-preview.tsx  # /demo 소개와 iframe
 ```
 
 - 화면은 실제 앱의 `*Screen`, `WorkoutForm`, `WorkoutCommentsView`, `BottomNavigation`을 그대로 쓴다. 복사하지 않는다.
-- 이동은 `window.history.pushState/replaceState`로 `?path=`만 바꾼다. Next가 `useSearchParams`를 갱신하므로 서버를 다시 부르지 않는다.
+- 이동은 `window.history.pushState/replaceState`로 `?path=`만 바꾸고 `demo-location`에 알린다. 서버를 다시 부르지 않는다.
+- 첫 화면은 서버가 처음 방문과 같은 샘플로 홈을 미리 그린다(`store.readHome`). `useSearchParams`는 정적 페이지를 Suspense까지 클라이언트 렌더로 미뤄 HTML이 비고, JS 뒤 새 DOM이 늦은 LCP가 되어 쓰지 않는다. hydration은 서버 DOM을 그대로 이어받고, 끝나면 실제 주소와 저장소로 다시 그린다.
+- 미리 그린 홈이 맞지 않는 방문(홈이 아닌 경로, 이 탭에 저장된 체험, 그린 날과 다른 KST 날짜, 저장소를 못 읽음)은 가드 스크립트가 그리기 전에 숨기고 hydration 뒤에 보인다. 데이터를 바꾼 뒤 새로고침해도 샘플이 잠깐 보이지 않는다.
 - 화면 속 링크는 `/demo/app?path=…`를 가리키고, `document.body` capture 단계에서 가로채 위 방식으로 이동한다. 작성 중 이탈 확인(document capture)이 먼저 받고, Next Link의 onClick(bubble)보다는 앞선다.
 - 조회는 TanStack Query(`["demo", …]`)로 한다. 댓글 작성·삭제 뒤에는 지금 화면을 다시 읽고, 기록 저장·삭제 뒤에는 표시만 해 두고 다음 화면에서 다시 읽는다.
 - 크루 만들기·초대 코드 가입·나가기, 로그아웃은 안내 문구로 대신한다.
