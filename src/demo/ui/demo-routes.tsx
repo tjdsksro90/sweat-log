@@ -50,6 +50,9 @@ const useRefreshAfter = () => {
     };
 };
 
+// 사진은 서버 Storage에 올려야 해서 체험에서는 막는다.
+const DEMO_PHOTO_MESSAGE = "체험에서는 사진을 올릴 수 없어요. 가입하면 기록 하나에 4장까지 붙일 수 있어요.";
+
 const unsupportedCrewAction: CrewFormAction = async () => ({ error: UNSUPPORTED_MESSAGE });
 
 export function DemoRoutes({ location }: { location: DemoLocation }) {
@@ -177,6 +180,7 @@ function DemoWorkoutForm({
       closeHref={detail ? `/workouts/${detail.id}` : "/workouts"}
       saveWorkout={actions.save}
       deleteWorkout={detail ? actions.remove : undefined}
+      photoUnavailableMessage={DEMO_PHOTO_MESSAGE}
     />
   );
 }
