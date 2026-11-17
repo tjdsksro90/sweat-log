@@ -84,9 +84,41 @@ begin
     '루틴을 고쳐도 이미 저장한 기록의 무게는 그대로다';
 end $$;
 
+-- 넣을 때 정할 수 있는 칸은 이름과 구성뿐이다. id·주인·시각은 기본값이 정한다.
+do $$
+begin
+  begin
+    insert into public.workout_routines (id, name, exercises)
+    values ('00000000-0000-4000-8000-0000000000ff', 'id 지정', '[{"name":"스쿼트","sets":[{"weight_kg":1,"reps":1}]}]');
+    raise exception 'id를 직접 넣었다';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    insert into public.workout_routines (user_id, name, exercises)
+    values ('00000000-0000-0000-0000-00000000002a', '내 id라도', '[{"name":"스쿼트","sets":[{"weight_kg":1,"reps":1}]}]');
+    raise exception 'user_id를 직접 넣었다';
+  exception when insufficient_privilege then
+    null;
+  end;
+  begin
+    insert into public.workout_routines (name, exercises, created_at, updated_at)
+    values ('시각 지정', '[{"name":"스쿼트","sets":[{"weight_kg":1,"reps":1}]}]', '2000-01-01', '2000-01-01');
+    raise exception '만든 시각을 직접 넣었다';
+  exception when insufficient_privilege then
+    null;
+  end;
+end $$;
+
 -- 주인·id·만든 시각은 바꿀 수 없다
 do $$
 begin
+  begin
+    update public.workout_routines set id = gen_random_uuid();
+    raise exception '루틴 id를 바꿨다';
+  exception when insufficient_privilege then
+    null;
+  end;
   begin
     update public.workout_routines set user_id = '00000000-0000-0000-0000-00000000002b';
     raise exception '루틴 주인을 남으로 바꿨다';
@@ -139,6 +171,14 @@ select repeat('가', 40), jsonb_agg(jsonb_build_object('name', repeat('나', 50)
   select jsonb_agg(jsonb_build_object('weight_kg', 1000, 'reps', 1000)) from generate_series(1, 30)
 )))
 from generate_series(1, 20);
+
+-- 개수 상한 트리거는 profiles 행을 FOR NO KEY UPDATE로 잠근다(FK가 거는 KEY SHARE와 부딪히지 않는 세기).
+do $$
+begin
+  assert (
+    select prosrc like '%for no key update%' from pg_proc where proname = 'limit_workout_routines'
+  ), '개수 상한 잠금은 for no key update다';
+end $$;
 
 -- 한 사람당 30개까지
 insert into public.workout_routines (name, exercises)

@@ -89,8 +89,8 @@ create trigger workout_routines_set_updated_at
   for each row execute function private.set_updated_at();
 
 -- 한 사람당 30개. 동시에 여러 개를 넣어도 넘지 않도록 그 사람의 profiles 행을 잠그고 센다.
--- 트리거는 RLS(with check)보다 먼저 돈다. 남의 user_id로 넣는 요청은 세지 않고 넘겨서 RLS가 막게 한다.
--- 그래야 남의 루틴 개수를 오류로 엿볼 수 없다.
+-- user_id는 insert 권한이 없어 늘 기본값 auth.uid()다. 그래도 RLS·권한이 바뀌는 날을 대비해
+-- 남의 user_id면 세지 않고 넘겨서 RLS가 막게 한다. 남의 루틴 개수를 오류로 엿볼 수 없게 하려는 것이다.
 create function private.limit_workout_routines() returns trigger
   language plpgsql
   security definer
@@ -101,7 +101,9 @@ begin
     return new;
   end if;
 
-  perform 1 from public.profiles where id = new.user_id for update;
+  -- for no key update: 같은 사람의 루틴 insert끼리는 줄 세우되, 다른 테이블이 profiles를 FK로 참조하며 거는
+  -- KEY SHARE 잠금(기록·댓글 저장 등)과는 부딪히지 않는다.
+  perform 1 from public.profiles where id = new.user_id for no key update;
 
   if (select count(*) from public.workout_routines where user_id = new.user_id) >= 30 then
     raise exception 'too_many_routines' using errcode = 'check_violation';
@@ -136,8 +138,10 @@ create policy "Users delete own routines" on public.workout_routines
   using (user_id = (select auth.uid()));
 
 revoke all on public.workout_routines from anon;
--- 만든 시각은 바꿀 일이 없다. 주인과 id도 고정이다.
-revoke update on public.workout_routines from authenticated;
+-- 사용자가 정하는 칸은 이름과 구성뿐이다. id·주인·시각은 기본값(gen_random_uuid, auth.uid(), now())과 트리거가 정한다.
+-- 그래서 insert·update 모두 두 칸만 허락한다. 주인을 직접 넣거나 만든 시각을 꾸밀 수 없다.
+revoke insert, update on public.workout_routines from authenticated;
+grant insert (name, exercises) on public.workout_routines to authenticated;
 grant update (name, exercises) on public.workout_routines to authenticated;
 
 -- check 제약의 검증 함수는 요청한 사용자 권한으로 실행된다.
