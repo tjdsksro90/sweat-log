@@ -1,11 +1,17 @@
 import "server-only";
 
-import type { WeeklySummary, WorkoutDetail, WorkoutListFilter, WorkoutPage } from "@/entities/workout/model/contracts";
+import type {
+  StrengthExercise,
+  WeeklySummary,
+  WorkoutDetail,
+  WorkoutListFilter,
+  WorkoutPage,
+} from "@/entities/workout/model/contracts";
 import { PHOTO_URL_EXPIRES_IN, WORKOUT_PHOTO_BUCKET } from "@/entities/workout/model/photo";
 import { RUNNING_STATS_MONTHS, type RunningStats, toRunningStats } from "@/entities/workout/model/running-stats";
 import { addDays, buildWeeklySummary, getKstToday, getWeekStart } from "@/entities/workout/model/weekly-summary";
 import { decodeWorkoutCursor, encodeWorkoutCursor } from "@/entities/workout/model/workout-cursor";
-import { toWorkoutDetail, toWorkoutListItem } from "@/entities/workout/model/workout-mappers";
+import { toExercises, toWorkoutDetail, toWorkoutListItem } from "@/entities/workout/model/workout-mappers";
 import { requireUser } from "@/shared/api/supabase/require-user";
 
 const PAGE_SIZE = 20;
@@ -67,6 +73,28 @@ export const getWorkoutPage = async (filter: WorkoutListFilter = {}): Promise<Wo
 };
 
 // 볼 권한이 없거나 없는 기록이면 null. 화면은 notFound()로 처리한다.
+/**
+ * "이 구성으로 루틴 만들기"용. 헬스 기록의 제목과 종목·세트만 읽는다.
+ * 상세(getWorkoutDetail)는 사진 서명 URL까지 만들어서 여기 쓰기엔 무겁다. 볼 수 있는지는 같은 RLS가 판단한다.
+ * 볼 수 없거나 헬스가 아니면 null.
+ */
+export const getStrengthWorkoutTemplate = async (
+  id: string,
+): Promise<{ title: string | null; exercises: StrengthExercise[] } | null> => {
+  if (!UUID_PATTERN.test(id)) return null;
+
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("workouts")
+    .select("kind, title, sets:strength_sets(exercise_name, exercise_order, set_order, weight_kg, reps)")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data || data.kind !== "strength") return null;
+  return { exercises: toExercises(data.sets), title: data.title };
+};
+
 export const getWorkoutDetail = async (id: string): Promise<WorkoutDetail | null> => {
   if (!UUID_PATTERN.test(id)) return null;
 

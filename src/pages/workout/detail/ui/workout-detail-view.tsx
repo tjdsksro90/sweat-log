@@ -91,17 +91,31 @@ export function WorkoutDetailView({ workout, comments }: { workout: WorkoutDetai
         </h2>
         <p className="whitespace-pre-wrap break-words text-body">{workout.memo || "남긴 메모가 없어요."}</p>
       </section>
-      {/* 삭제는 수정 화면에서 확인 시트와 함께 한다. */}
-      {workout.isMine && (
-        <Button
-          className="self-start"
-          variant="outline"
-          render={<AppLink href={`/workouts/${workout.id}/edit`} />}
-          nativeButton={false}
-          role="link"
-        >
-          수정
-        </Button>
+      {(workout.isMine || workout.exercises.length > 0) && (
+        <div className="flex flex-wrap gap-2">
+          {/* 삭제는 수정 화면에서 확인 시트와 함께 한다. */}
+          {workout.isMine && (
+            <Button
+              variant="outline"
+              render={<AppLink href={`/workouts/${workout.id}/edit`} />}
+              nativeButton={false}
+              role="link"
+            >
+              수정
+            </Button>
+          )}
+          {/* 볼 수 있는 헬스 기록이면 친구 기록의 구성도 내 루틴으로 저장할 수 있다. 값을 복사해 둘은 따로 산다. */}
+          {workout.exercises.length > 0 && (
+            <Button
+              variant="outline"
+              render={<AppLink href={`/settings/routines/new?from=${workout.id}`} />}
+              nativeButton={false}
+              role="link"
+            >
+              이 구성으로 루틴 만들기
+            </Button>
+          )}
+        </div>
       )}
       {comments}
     </div>

@@ -1,3 +1,4 @@
+import type { Routine } from "@/entities/routine/model/routine";
 import type { WorkoutFormValues } from "@/features/workout/model/workout-form";
 import type { WorkoutFormErrors } from "@/features/workout/model/workout-input";
 
@@ -10,10 +11,12 @@ export function DetailStep({
   values,
   errors,
   onChange,
+  routines,
 }: {
   values: WorkoutFormValues;
   errors: WorkoutFormErrors;
   onChange: (update: (values: WorkoutFormValues) => WorkoutFormValues) => void;
+  routines?: Routine[];
 }) {
   if (values.kind === "run") {
     return (
@@ -25,7 +28,14 @@ export function DetailStep({
 
   return (
     <div className="flex flex-col gap-6">
-      {isStrength && <StrengthDetail exercises={values.exercises} errors={errors} onChange={onChange} />}
+      {isStrength && (
+        <StrengthDetail
+          exercises={values.exercises}
+          errors={errors}
+          onChange={(change) => onChange((current) => ({ ...current, exercises: change(current.exercises) }))}
+          routines={routines}
+        />
+      )}
       <DurationFields
         id="workout-duration"
         legend={isStrength ? "전체 운동 시간 (선택)" : "운동한 시간"}

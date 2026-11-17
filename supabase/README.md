@@ -11,6 +11,7 @@ profiles ─< workouts ─┬─ run_details         (러닝: 거리, 시간)
                       ├─< workout_comments
                       └─< workout_photos     (사진 메타. 파일은 Storage workout-photos 버킷)
 profiles ─< push_subscriptions               (브라우저별 푸시 알림 구독)
+profiles ─< workout_routines                 (헬스 루틴. 구성은 exercises jsonb 한 칸)
 ```
 
 ## 권한 (RLS)
@@ -21,6 +22,7 @@ profiles ─< push_subscriptions               (브라우저별 푸시 알림 �
 - 크루 생성과 가입은 `create_crew`, `join_crew_by_code` 함수로만 한다.
 - 권한 확인 함수는 노출되지 않는 `private` 스키마에 둔다.
 - 푸시 구독은 본인 것만 읽고 지운다. 저장은 `save_push_subscription`으로만 하며(직접 insert·update 불가), 주요 브라우저 푸시 서비스 주소만 받고 사람마다 최근 10개까지만 남긴다. 같은 브라우저(endpoint)로 다른 계정이 알림을 켜면 주인이 바뀐다. 남의 구독은 서버 전용 secret key(service role)로 발송할 때만 읽는다.
+- 헬스 루틴은 본인만 읽고 만들고 고치고 지운다. 크루에 공유하지 않는다. 고칠 수 있는 칸은 이름과 구성(`name`, `exercises`)뿐이다.
 - 사진 파일은 비공개 버킷 `workout-photos`의 `{작성자}/{기록}/{파일}` 경로에 둔다. 사진 행과 파일은 그 기록을 볼 수 있는 사람만 읽고, 올리기·지우기는 작성자만 한다. 행이 없는 파일은 작성자 말고는 읽지 못한다. 앱은 서명 URL로만 보여 준다.
 
 ## 로컬 개발
@@ -51,6 +53,7 @@ docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < su
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/strength-records.sql
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/push-subscriptions.sql
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/workout-photos.sql
+docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/workout-routines.sql
 ```
 
 ## 기록 저장·목록 함수
@@ -67,3 +70,10 @@ docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < su
 - 사진은 기록 하나에 4장까지다. 넣을 때 트리거가 기록 행을 잠그고 세며, 넘으면 `too_many_photos`를 낸다. 순서(`position`)도 트리거가 마지막 다음 번호로 매긴다.
 - 서명 URL은 1시간(`PHOTO_URL_EXPIRES_IN`) 동안 유효하다. 한 번 받은 URL은 그동안 권한을 다시 보지 않아서, 크루를 나간 사람이나 이미 지운 사진도 최대 1시간까지 열린다.
 - 형식·크기 검증 범위: 바이트 시그니처(JPEG/PNG/WebP)와 가로·세로 확인은 앱의 Server Action(`uploadWorkoutPhoto`)으로 올릴 때만 한다. Storage API로 직접 올리면 버킷의 mime 타입(Content-Type 기준)과 1MB 제한만 걸린다. 작성자가 파일과 사진 행을 직접 넣으면 이 검증 없이 크루원에게도 보일 수 있다(올릴 수 있는 사람은 작성자뿐이다).
+
+## 헬스 루틴
+
+- `workout_routines(id, user_id, name, exercises jsonb, created_at, updated_at)`. 루틴 하나가 한 행이고 종목 순서와 세트(무게 × 횟수)를 `exercises`에 통째로 둔다. 모양은 `[{"name": "스쿼트", "sets": [{"weight_kg": 60, "reps": 10}]}]`로 `save_workout` 입력과 같다.
+- 행을 나누지 않은 이유: 루틴은 늘 통째로 읽고 저장하며 종목·세트 단위로 조회·집계하지 않는다. 한 행이면 RPC 없이 RLS가 걸린 insert·update 한 번으로 저장된다.
+- 상한: 이름 1~40자, 종목 1~20개, 종목마다 세트 1~30개, 무게 0~1000(소수 둘째 자리, null은 맨몸), 횟수 1~1000. check 제약(`private.is_valid_routine_exercises`)이 막는다. 한 사람당 30개까지이며 넣을 때 트리거가 profiles 행을 잠그고 세서 넘으면 `too_many_routines`를 낸다.
+- 기록 작성 폼은 루틴 값을 복사해서 채운다. 루틴을 고치거나 지워도 이미 저장한 기록(`strength_sets`)은 바뀌지 않는다.

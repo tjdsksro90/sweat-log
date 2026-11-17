@@ -1,5 +1,6 @@
 import type { CrewDetail, CrewSummary } from "@/entities/crew/model/crew";
 import { buildStrengthRecords } from "@/entities/exercise/model/build-strength-records";
+import { ROUTINE_LIMITS, type Routine, type RoutineInput } from "@/entities/routine/model/routine";
 import type {
   WeeklySummary,
   WorkoutDetail,
@@ -11,7 +12,9 @@ import { buildRunningStats, type RunningStats } from "@/entities/workout/model/r
 import { addDays, buildWeeklySummary, getKstToday, getWeekStart } from "@/entities/workout/model/weekly-summary";
 import { decodeWorkoutCursor, encodeWorkoutCursor, type WorkoutCursor } from "@/entities/workout/model/workout-cursor";
 import { toWorkoutDetail, toWorkoutListItem, type WorkoutDetailRow } from "@/entities/workout/model/workout-mappers";
+import type { DeleteRoutineResult, SaveRoutineResult } from "@/features/workout/api/routine-actions";
 import type { DeleteWorkoutResult, SaveWorkoutResult } from "@/features/workout/api/workout-actions";
+import { getRoutineErrorMessage, parseRoutineInput } from "@/features/workout/model/routine-form";
 import { getWorkoutErrorMessage, isUuid, parseWorkoutInput } from "@/features/workout/model/save-workout-input";
 import type { WorkoutComment } from "@/features/workout-comment/model/comment";
 import { type CommentFormState, validateCommentBody } from "@/features/workout-comment/model/comment-form";
@@ -25,7 +28,7 @@ import {
 import { toWorkoutFormCrews } from "@/widgets/workout-form/model/crews";
 import type { WorkoutFormCrew } from "@/widgets/workout-form/model/types";
 
-import { createSampleData, DEMO_CREW, DEMO_USER, type DemoState } from "./sample-data";
+import { createSampleData, createSampleRoutines, DEMO_CREW, DEMO_USER, type DemoState } from "./sample-data";
 
 export const DEMO_STORAGE_KEY = "sweat-log:demo:v1";
 const PAGE_SIZE = 20;
@@ -58,6 +61,22 @@ const restore = (raw: string): DemoState | null => {
     Array.isArray(state.comments)
   )
     return null;
+  // 루틴이 생기기 전에 저장된 세션은 기록을 그대로 두고 샘플 루틴만 채운다.
+  if (state.routines === undefined) state.routines = createSampleRoutines();
+  if (!Array.isArray(state.routines) || state.routines.length > ROUTINE_LIMITS.perUser) return null;
+  const routineIds = new Set<string>();
+  for (const routine of state.routines) {
+    if (
+      !routine ||
+      !isUuid(routine.id) ||
+      routineIds.has(routine.id) ||
+      typeof routine.updatedAt !== "string" ||
+      Number.isNaN(Date.parse(routine.updatedAt)) ||
+      !parseRoutineInput({ name: routine.name, exercises: routine.exercises }).ok
+    )
+      return null;
+    routineIds.add(routine.id);
+  }
   const ids = new Set<string>();
   for (const row of state.workouts) {
     if (!row || ids.has(row.id) || !decodeWorkoutCursor(encodeWorkoutCursor(cursorOf(row)))) return null;
@@ -349,6 +368,33 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
     persist();
     return { error: null, success: true };
   };
+  // 실제 앱처럼 최근에 고친 것부터. 루틴은 내 것만 있다.
+  const getRoutines = async (): Promise<Routine[]> =>
+    structuredClone(read().routines).sort((a, b) => compare(b.updatedAt, a.updatedAt) || compare(a.id, b.id));
+  const getRoutine = async (id: string): Promise<Routine | null> =>
+    structuredClone(read().routines.find((routine) => routine.id === id) ?? null);
+  const saveRoutine = async (input: RoutineInput): Promise<SaveRoutineResult> => {
+    const parsed = parseRoutineInput(input);
+    if (!parsed.ok) return parsed;
+    const data = read();
+    const { id, name, exercises } = parsed.input;
+    if (id && !data.routines.some((routine) => routine.id === id))
+      return { ok: false, error: getRoutineErrorMessage({ message: "routine_not_found" }) };
+    if (!id && data.routines.length >= ROUTINE_LIMITS.perUser)
+      return { ok: false, error: getRoutineErrorMessage({ message: "too_many_routines" }) };
+    const routine: Routine = { id: id ?? crypto.randomUUID(), name, exercises, updatedAt: now().toISOString() };
+    data.routines = [...data.routines.filter((item) => item.id !== routine.id), routine];
+    persist();
+    return { ok: true, id: routine.id };
+  };
+  const deleteRoutine = async (id: string): Promise<DeleteRoutineResult> => {
+    const data = read();
+    if (!data.routines.some((routine) => routine.id === id))
+      return { ok: false, error: getRoutineErrorMessage({ message: "routine_not_found" }) };
+    data.routines = data.routines.filter((routine) => routine.id !== id);
+    persist();
+    return { ok: true };
+  };
   const reset = (): void => {
     read();
     state = createSampleData(now());
@@ -370,6 +416,10 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
     deleteWorkout,
     createComment,
     deleteComment,
+    getRoutines,
+    getRoutine,
+    saveRoutine,
+    deleteRoutine,
     reset,
   };
 };
@@ -406,6 +456,10 @@ export const saveWorkout = browserOnly(sharedStore.saveWorkout);
 export const deleteWorkout = browserOnly(sharedStore.deleteWorkout);
 export const createComment = browserOnly(sharedStore.createComment);
 export const deleteComment = browserOnly(sharedStore.deleteComment);
+export const getRoutines = browserOnly(sharedStore.getRoutines);
+export const getRoutine = browserOnly(sharedStore.getRoutine);
+export const saveRoutine = browserOnly(sharedStore.saveRoutine);
+export const deleteRoutine = browserOnly(sharedStore.deleteRoutine);
 export const reset = (): void => {
   assertBrowser();
   sharedStore.reset();

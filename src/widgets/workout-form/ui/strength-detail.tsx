@@ -2,6 +2,7 @@ import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 
 import { findExercise } from "@/entities/exercise/model/search-exercises";
 import { ExerciseNameInput } from "@/entities/exercise/ui/exercise-name-input";
+import type { Routine } from "@/entities/routine/model/routine";
 import {
   addExercise,
   addSet,
@@ -12,7 +13,6 @@ import {
   renameExercise,
   type StrengthExerciseFormValues,
   updateSet,
-  type WorkoutFormValues,
 } from "@/features/workout/model/workout-form";
 import {
   acceptDecimal2Input,
@@ -26,11 +26,14 @@ import { FieldError } from "@/shared/ui/field";
 import { NumberInput } from "@/shared/ui/number-input";
 
 import { FormField } from "./form-field";
+import { RoutinePicker } from "./routine-picker";
 
 // 세트 번호 · 무게 · 횟수 · 삭제
 const SET_ROW = "grid grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1fr)_2.75rem] items-start gap-2";
 
-type Update = (update: (values: WorkoutFormValues) => WorkoutFormValues) => void;
+// 종목 목록만 바꾼다. 기록 작성 폼과 루틴 편집 폼이 자기 값의 exercises에 이어 붙인다.
+type Exercises = StrengthExerciseFormValues[];
+type Update = (update: (values: { exercises: Exercises }) => { exercises: Exercises }) => void;
 
 function ExerciseCard({
   exercise,
@@ -163,24 +166,32 @@ function ExerciseCard({
   );
 }
 
-// 무게를 비우면 맨몸 운동. 새 세트는 직전 세트 값을 복사한다(addSet).
+/**
+ * 무게를 비우면 맨몸 운동. 새 세트는 직전 세트 값을 복사한다(addSet).
+ * routines를 넘기면(기록 작성 폼) 루틴 불러오기를 보여 준다. 루틴 편집 폼은 넘기지 않는다.
+ */
 export function StrengthDetail({
   exercises,
   errors,
   onChange,
+  routines,
 }: {
-  exercises: StrengthExerciseFormValues[];
+  exercises: Exercises;
   errors: WorkoutFormErrors;
-  onChange: Update;
+  onChange: (update: (exercises: Exercises) => Exercises) => void;
+  routines?: Routine[];
 }) {
+  const update: Update = (change) => onChange((current) => change({ exercises: current }).exercises);
+
   return (
     <div className="flex flex-col gap-4">
+      {routines && <RoutinePicker routines={routines} exercises={exercises} onLoad={onChange} />}
       <p className="text-caption text-muted-foreground">무게를 비우면 맨몸 운동으로 저장해요.</p>
       {exercises.map((exercise, index) => (
-        <ExerciseCard key={exercise.key} exercise={exercise} index={index} errors={errors} onChange={onChange} />
+        <ExerciseCard key={exercise.key} exercise={exercise} index={index} errors={errors} onChange={update} />
       ))}
       {errors.exercises && <FieldError>{errors.exercises}</FieldError>}
-      <Button variant="secondary" onClick={() => onChange(addExercise)} disabled={exercises.length >= MAX_EXERCISES}>
+      <Button variant="secondary" onClick={() => update(addExercise)} disabled={exercises.length >= MAX_EXERCISES}>
         <PlusIcon />
         종목 추가
       </Button>

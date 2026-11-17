@@ -330,6 +330,42 @@ export type Database = {
           },
         ];
       };
+      workout_routines: {
+        Row: {
+          created_at: string;
+          exercises: NonNullable<Json>;
+          id: string;
+          name: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          exercises: NonNullable<Json>;
+          id?: string;
+          name: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          exercises?: NonNullable<Json>;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "workout_routines_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       workouts: {
         Row: {
           created_at: string;

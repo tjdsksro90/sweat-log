@@ -10,6 +10,7 @@ import {
   getTodayInSeoul,
   MAX_EXERCISES,
   MAX_SETS_PER_EXERCISE,
+  type StrengthExerciseFormValues,
   WORKOUT_FORM_STEPS,
   type WorkoutFormStep,
   type WorkoutFormValues,
@@ -144,12 +145,15 @@ const validateDetail = (values: WorkoutFormValues, errors: WorkoutFormErrors) =>
   // 기타는 시간 말고 적을 상세가 없어서 시간을 받는다. 헬스는 세트가 있으니 시간은 선택.
   else if (values.kind === "other" && duration.seconds === null) errors.duration = "운동한 시간을 적어 주세요.";
 
-  if (values.kind !== "strength") return;
+  if (values.kind === "strength") validateStrengthExercises(values.exercises, errors);
+};
 
-  if (values.exercises.length === 0) errors.exercises = "종목을 하나 이상 추가해 주세요.";
-  if (values.exercises.length > MAX_EXERCISES) errors.exercises = `종목은 ${MAX_EXERCISES}개까지예요.`;
+// 헬스 종목·세트 검증. 기록 작성 폼과 루틴 편집 폼이 같은 규칙과 오류 위치(key)를 쓴다.
+export const validateStrengthExercises = (exercises: StrengthExerciseFormValues[], errors: WorkoutFormErrors) => {
+  if (exercises.length === 0) errors.exercises = "종목을 하나 이상 추가해 주세요.";
+  if (exercises.length > MAX_EXERCISES) errors.exercises = `종목은 ${MAX_EXERCISES}개까지예요.`;
 
-  for (const exercise of values.exercises) {
+  for (const exercise of exercises) {
     const name = exercise.name.trim();
     if (name.length === 0) errors[`${exerciseErrorKey(exercise.key)}.name`] = "종목 이름을 적어 주세요.";
     else if (name.length > LIMITS.exerciseName) {
@@ -195,6 +199,16 @@ export type ToWorkoutInputResult =
   | { ok: true; input: WorkoutInput }
   | { ok: false; errors: WorkoutFormErrors; step: WorkoutFormStep };
 
+// validateStrengthExercises를 통과한 값만 넘긴다.
+export const toStrengthExercises = (exercises: StrengthExerciseFormValues[]): StrengthExercise[] =>
+  exercises.map((exercise) => ({
+    name: exercise.name.trim(),
+    sets: exercise.sets.map((set) => ({
+      reps: parseReps(set.reps).reps as number,
+      weightKg: parseWeightKg(set.weightKg).weight,
+    })),
+  }));
+
 // 저장 직전. 오류가 있으면 처음 걸린 단계로 돌려보낸다.
 export const toWorkoutInput = (values: WorkoutFormValues, today = getTodayInSeoul()): ToWorkoutInputResult => {
   for (const step of WORKOUT_FORM_STEPS) {
@@ -205,16 +219,7 @@ export const toWorkoutInput = (values: WorkoutFormValues, today = getTodayInSeou
   const isRun = values.kind === "run";
   const runDistance = parseDistanceMeters(values.run.distanceKm).meters;
   const runDuration = parseDuration(values.run.duration).seconds;
-  const exercises: StrengthExercise[] =
-    values.kind === "strength"
-      ? values.exercises.map((exercise) => ({
-          name: exercise.name.trim(),
-          sets: exercise.sets.map((set) => ({
-            reps: parseReps(set.reps).reps as number,
-            weightKg: parseWeightKg(set.weightKg).weight,
-          })),
-        }))
-      : [];
+  const exercises = values.kind === "strength" ? toStrengthExercises(values.exercises) : [];
 
   return {
     input: {

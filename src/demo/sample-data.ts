@@ -1,4 +1,5 @@
 import type { CrewDetail } from "@/entities/crew/model/crew";
+import type { Routine } from "@/entities/routine/model/routine";
 import type { WorkoutPerson } from "@/entities/workout/model/contracts";
 import { addDays, getKstToday } from "@/entities/workout/model/weekly-summary";
 import type { WorkoutDetailRow } from "@/entities/workout/model/workout-mappers";
@@ -23,11 +24,39 @@ export type DemoState = {
   version: 1;
   workouts: WorkoutDetailRow[];
   comments: Record<string, WorkoutComment[]>;
+  routines: Routine[];
 };
 
 // UUID 모양을 유지해야 실제 커서와 폼 검증을 그대로 쓸 수 있다.
 const sampleId = (prefix: string, index: number) => `${prefix}-0000-4000-8000-${String(index + 1).padStart(12, "0")}`;
 const HOUR_MS = 60 * 60 * 1000;
+
+const sets = (count: number, weightKg: number | null, reps: number) =>
+  Array.from({ length: count }, () => ({ reps, weightKg }));
+
+// 루틴 불러오기와 관리 화면을 바로 해 볼 수 있게 두 개를 넣어 둔다.
+export const createSampleRoutines = (now: Date = new Date()): Routine[] => [
+  {
+    id: sampleId("60000000", 0),
+    name: "하체 데이",
+    exercises: [
+      { name: "스쿼트", sets: [...sets(2, 40, 10), ...sets(2, 50, 8)] },
+      { name: "레그프레스", sets: sets(3, 100, 12) },
+      { name: "런지", sets: sets(3, null, 12) },
+    ],
+    updatedAt: new Date(now.getTime() - 3 * 24 * HOUR_MS).toISOString(),
+  },
+  {
+    id: sampleId("60000000", 1),
+    name: "상체 밀기",
+    exercises: [
+      { name: "벤치프레스", sets: sets(3, 40, 10) },
+      { name: "덤벨숄더프레스", sets: sets(3, 12.5, 12) },
+      { name: "푸시업", sets: sets(2, null, 15) },
+    ],
+    updatedAt: new Date(now.getTime() - 5 * 24 * HOUR_MS).toISOString(),
+  },
+];
 
 export const createSampleData = (now: Date = new Date()): DemoState => {
   const today = getKstToday(now);
@@ -94,5 +123,5 @@ export const createSampleData = (now: Date = new Date()): DemoState => {
       companions: index === 0 ? [{ user_id: DEMO_USER.id, profile: { ...DEMO_USER } }] : [],
     });
   }
-  return { version: 1, workouts, comments };
+  return { version: 1, workouts, comments, routines: createSampleRoutines(now) };
 };
