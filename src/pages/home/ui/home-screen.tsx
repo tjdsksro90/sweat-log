@@ -1,3 +1,4 @@
+import type { StrengthRecord } from "@/entities/exercise/model/strength-records";
 import type { WeeklySummary } from "@/entities/workout/model/contracts";
 import type { RunningStats } from "@/entities/workout/model/running-stats";
 import { AppLink } from "@/shared/lib/app-navigation";
@@ -38,5 +39,3 @@ export function HomeScreen({
     </PageLayout>
   );
 }
-
-import type { StrengthRecord } from "@/entities/exercise/model/strength-records";

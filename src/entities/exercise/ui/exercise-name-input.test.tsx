@@ -17,6 +17,38 @@ function Form() {
   );
 }
 describe("종목 자동완성", () => {
+  it("빈 값에서는 목록을 열지 않고 상태 안내 영역을 유지한다", async () => {
+    const user = userEvent.setup();
+    render(<Form />);
+    const input = screen.getByRole("combobox");
+    const status = screen.getByRole("status");
+    await user.click(input);
+    await user.keyboard("{ArrowDown}");
+    expect(input).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(status).toBeEmptyDOMElement();
+    await user.type(input, "없는종목");
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("그대로");
+    await user.clear(input);
+    await user.type(input, "   ");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toBeEmptyDOMElement();
+  });
+  it("목록이 열려 있을 때만 Escape의 기본 동작을 막는다", async () => {
+    const user = userEvent.setup();
+    render(<Form />);
+    const input = screen.getByRole("combobox");
+    expect(fireEvent.keyDown(input, { key: "Escape" })).toBe(true);
+    await user.type(input, "벤ㅊ");
+    expect(fireEvent.keyDown(input, { key: "Escape" })).toBe(false);
+    expect(input).toHaveAttribute("aria-expanded", "false");
+    expect(fireEvent.keyDown(input, { key: "Escape" })).toBe(true);
+    await user.clear(input);
+    await user.type(input, "없는종목");
+    expect(fireEvent.keyDown(input, { key: "Escape" })).toBe(true);
+  });
   it("초성 검색, 방향키 이동과 Enter 선택을 입력 포커스 안에서 처리한다", async () => {
     const user = userEvent.setup();
     render(<Form />);

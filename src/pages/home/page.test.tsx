@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { getStrengthRecords } from "@/entities/exercise/api/get-strength-records";
 import { getRunningStats, getWeeklySummary } from "@/entities/workout/api/server-queries";
 import { SAMPLE_RUNNING_STATS, SAMPLE_WEEKLY_SUMMARY } from "@/entities/workout/model/fixtures";
 
@@ -26,5 +27,3 @@ describe("홈 조회 연결", () => {
     expect(screen.getByRole("link", { name: "기록하기" })).toHaveAttribute("href", "/workouts/new");
   });
 });
-
-import { getStrengthRecords } from "@/entities/exercise/api/get-strength-records";

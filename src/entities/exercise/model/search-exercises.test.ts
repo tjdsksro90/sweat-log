@@ -10,8 +10,22 @@ describe("헬스 종목 사전 검색", () => {
     expect(new Set(EXERCISES.map((e) => e.name)).size).toBe(EXERCISES.length);
     expect(new Set(EXERCISES.map((e) => e.bodyPart)).size).toBe(6);
   });
-  it.each(["벤치", "ㅂㅊ", " ㅂ ㅊ ", "벤치\t프레스", "벤치\u00a0프레스"])("%s로 벤치프레스를 찾는다", (query) => {
+  it.each([
+    "벤치",
+    "ㅂㅊ",
+    "벤ㅊ",
+    "ㅂ치프ㄹ",
+    " ㅂ ㅊ ",
+    "벤치\t프레스",
+    "벤치\u00a0프레스",
+  ])("%s로 벤치프레스를 찾는다", (query) => {
     expect(searchExercises(query).some((e) => e.name === "벤치프레스")).toBe(true);
+  });
+  it("부위는 앞부분만 비교하고 혼합 검색의 완성 글자는 그대로 비교한다", () => {
+    expect(searchExercises("하").every((e) => e.bodyPart === "하체")).toBe(true);
+    expect(searchExercises("체").map((e) => e.name)).toEqual(["체스트프레스"]);
+    expect(searchExercises("슴")).toEqual([]);
+    expect(searchExercises("번ㅊ")).toEqual([]);
   });
   it("부분 이름과 부위 검색, 빈 검색과 미등록 이름을 처리한다", () => {
     expect(searchExercises("하체").every((e) => e.bodyPart === "하체")).toBe(true);

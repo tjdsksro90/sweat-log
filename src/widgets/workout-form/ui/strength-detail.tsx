@@ -77,11 +77,9 @@ function ExerciseCard({
           </Button>
         </div>
 
-        {bodyweight && (
-          <p id={hintId} role="status" className="text-caption text-muted-foreground">
-            맨몸 종목이에요. 추가 중량이 없다면 무게 칸을 비워 두세요.
-          </p>
-        )}
+        <p id={hintId} role="status" className="text-caption text-muted-foreground empty:sr-only">
+          {bodyweight ? "맨몸 종목이에요. 추가 중량이 없다면 무게 칸을 비워 두세요." : ""}
+        </p>
 
         {/* 단위는 입력 안이 아니라 열 제목에 둔다. 좁은 화면에서도 100.25 같은 값이 다 보이게. */}
         <div aria-hidden="true" className={`${SET_ROW} -mb-2 text-caption text-muted-foreground`}>

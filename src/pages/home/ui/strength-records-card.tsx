@@ -1,5 +1,6 @@
 import { BarbellIcon } from "@phosphor-icons/react/ssr";
 
+import { findExercise } from "@/entities/exercise/model/search-exercises";
 import type { StrengthRecord } from "@/entities/exercise/model/strength-records";
 import { AppLink } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
@@ -48,13 +49,17 @@ export function StrengthRecordsCard({ records }: { records: StrengthRecord[] }) 
                       {record.workoutCount}회 기록 · {record.maxWeightKg === null ? "첫 기록" : "최초 달성"}{" "}
                       {record.workoutDate.replaceAll("-", ".")}
                     </span>
-                    {record.maxWeightKg === null && (
+                    {record.maxWeightKg === null && findExercise(record.exerciseName)?.bodyweight && (
                       <span className="text-caption text-muted-foreground">무게 기록 없음</span>
                     )}
                   </span>
                   <span className="shrink-0 font-bold text-xl tabular-nums">
                     {record.maxWeightKg === null ? (
-                      "맨몸"
+                      findExercise(record.exerciseName)?.bodyweight ? (
+                        "맨몸"
+                      ) : (
+                        <span className="text-caption">무게 기록 없음</span>
+                      )
                     ) : (
                       <>
                         {weightFormat.format(record.maxWeightKg)}

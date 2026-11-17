@@ -4,7 +4,7 @@ import { type ComponentProps, useEffect, useId, useRef, useState } from "react";
 
 import { Input } from "@/shared/ui/input";
 
-import { searchExercises } from "../model/search-exercises";
+import { normalizeExerciseName, searchExercises } from "../model/search-exercises";
 
 export function ExerciseNameInput({
   value,
@@ -18,7 +18,8 @@ export function ExerciseNameInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const matches = searchExercises(value);
+  const hasQuery = normalizeExerciseName(value).length > 0;
+  const matches = hasQuery ? searchExercises(value) : [];
   const expanded = open && matches.length > 0;
   const active = expanded && activeIndex >= 0 && activeIndex < matches.length ? activeIndex : -1;
   const optionId = (index: number) => `${id}-option-${index}`;
@@ -68,7 +69,7 @@ export function ExerciseNameInput({
             event.preventDefault();
             select(active);
           } else if (event.key === "Escape") {
-            event.preventDefault();
+            if (expanded) event.preventDefault();
             setOpen(false);
             setActiveIndex(-1);
           } else if (event.key === "Tab") {
@@ -106,11 +107,9 @@ export function ExerciseNameInput({
           ))}
         </ul>
       )}
-      {open && matches.length === 0 && (
-        <p className="mt-1 text-caption text-muted-foreground" role="status">
-          추천 종목이 없어요. 입력한 이름 그대로 기록할 수 있어요.
-        </p>
-      )}
+      <p className="not-empty:mt-1 text-caption text-muted-foreground" role="status">
+        {open && hasQuery && matches.length === 0 ? "추천 종목이 없어요. 입력한 이름 그대로 기록할 수 있어요." : ""}
+      </p>
     </div>
   );
 }

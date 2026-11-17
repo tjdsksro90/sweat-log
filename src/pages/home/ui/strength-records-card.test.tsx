@@ -4,6 +4,16 @@ import { describe, expect, it } from "vitest";
 import { StrengthRecordsCard } from "./strength-records-card";
 
 describe("헬스 최고 무게 카드", () => {
+  it.each(["벤치프레스", "나만의 종목"])("무게가 없는 %s를 맨몸으로 단정하지 않는다", (exerciseName) => {
+    render(
+      <StrengthRecordsCard
+        records={[{ exerciseName, maxWeightKg: null, workoutDate: "2026-11-15", workoutId: "a", workoutCount: 1 }]}
+      />,
+    );
+    expect(screen.queryByText("맨몸")).not.toBeInTheDocument();
+    expect(screen.getByText("무게 기록 없음")).toBeInTheDocument();
+    expect(screen.getByText("1회 기록 · 첫 기록 2026.11.15")).toBeInTheDocument();
+  });
   it("빈 상태에서 헬스 기록 작성을 안내한다", () => {
     render(<StrengthRecordsCard records={[]} />);
     expect(screen.getByRole("heading", { name: "아직 헬스 기록이 없어요" })).toBeInTheDocument();
