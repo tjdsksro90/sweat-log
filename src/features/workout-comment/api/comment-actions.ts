@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 
 import { isUuid } from "@/entities/crew/model/uuid";
+import { notifyCommentCreated } from "@/features/push-notification/server";
 import { requireUser } from "@/shared/api/supabase/require-user";
 
 import { type CommentFormState, validateCommentBody } from "../model/comment-form";
@@ -35,6 +36,7 @@ export const createComment = async (_state: CommentFormState, formData: FormData
     .insert({ workout_id: workoutId, user_id: user.id, body: body.trim() });
   if (result.error)
     return { error: "댓글을 작성하지 못했어요. 기록을 볼 수 있는지 확인하고 다시 시도해 주세요.", success: false };
+  notifyCommentCreated({ actorId: user.id, body: body.trim(), supabase, workoutId });
   revalidatePath(`/workouts/${workoutId}`);
   return { error: null, success: true };
 };
