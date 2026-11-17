@@ -23,6 +23,7 @@ describe("buildWorkoutPayload", () => {
   it("크루 구성원에게는 크루 이름과 기록 상세 경로를 보낸다", () => {
     expect(buildWorkoutPayload({ actorNickname: "민수", reason: "crew", workout: RUN })).toEqual({
       body: "민수님이 러닝 5.20km 기록을 공유했어요.",
+      renotify: true,
       tag: "workout-w1",
       title: "새벽러닝 새 기록",
       url: "/workouts/w1",
@@ -41,10 +42,19 @@ describe("buildCommentPayload", () => {
   it("닉네임 없이 댓글 내용과 기록 경로만 보낸다", () => {
     expect(buildCommentPayload({ body: "  수고했어!\n다음엔 같이 뛰자  ", workoutId: "w1" })).toEqual({
       body: "수고했어! 다음엔 같이 뛰자",
+      renotify: false,
       tag: "comment-w1",
       title: "내 기록에 새 댓글",
       url: "/workouts/w1",
     });
+  });
+
+  it("같은 기록의 댓글 알림은 하나로 바꾸고 다시 울리지 않는다", () => {
+    const first = buildCommentPayload({ body: "첫 댓글", workoutId: "w1" });
+    const second = buildCommentPayload({ body: "둘째 댓글", workoutId: "w1" });
+    expect(second.tag).toBe(first.tag);
+    expect(second.renotify).toBe(false);
+    expect(buildCommentPayload({ body: "다른 기록", workoutId: "w2" }).tag).not.toBe(first.tag);
   });
 
   it("긴 댓글은 80자에서 자른다", () => {

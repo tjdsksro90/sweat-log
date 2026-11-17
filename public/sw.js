@@ -76,10 +76,11 @@ self.addEventListener("fetch", (event) => {
 });
 
 /**
- * 푸시 알림. 서버(features/push-notification)가 { title, body, url, tag }를 보낸다.
+ * 푸시 알림. 서버(features/push-notification)가 { title, body, url, tag, renotify }를 보낸다.
+ * 같은 tag의 알림은 하나로 바뀌고, renotify가 true일 때만 바뀔 때 다시 울린다(연달아 달린 댓글은 조용히 바뀐다).
  * 알림 내용은 캐시와 무관하고, 위 캐시 정책은 바꾸지 않는다.
  */
-const DEFAULT_NOTIFICATION = { title: "땀일기", body: "새 소식이 있어요.", url: "/", tag: undefined };
+const DEFAULT_NOTIFICATION = { title: "땀일기", body: "새 소식이 있어요.", url: "/", tag: undefined, renotify: false };
 
 // 앱 안 경로만 연다. 다른 사이트 주소가 오면 홈으로 보낸다.
 const toAppUrl = (url) => {
@@ -104,7 +105,8 @@ self.addEventListener("push", (event) => {
       body: data.body,
       icon: "/icons/icon-192.png",
       tag: data.tag,
-      renotify: Boolean(data.tag),
+      // tag 없이 renotify만 주면 showNotification이 실패한다.
+      renotify: Boolean(data.tag) && data.renotify === true,
       data: { url: toAppUrl(data.url) },
     }),
   );

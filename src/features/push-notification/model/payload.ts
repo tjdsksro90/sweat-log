@@ -10,8 +10,13 @@ import type { WorkoutRecipient } from "./recipients";
  *   - 기록 알림: 받는 사람은 그 기록을 볼 수 있는 크루 구성원이나 동행자다. 보낸 사람 닉네임도 같은 크루라서 보인다.
  *   - 댓글 알림: 작성자는 자기 기록의 댓글을 모두 보지만, 크루를 나간 동행자가 쓴 댓글이면 닉네임을 못 볼 수 있다.
  *     그래서 닉네임 없이 댓글 내용만 보낸다.
+ *
+ * tag가 같은 알림은 알림 센터에서 하나로 바뀐다. renotify가 false면 바뀔 때 소리·진동을 다시 내지 않는다.
+ *   - 기록 알림: 기록마다 한 번 오는 일이라 울린다.
+ *   - 댓글 알림: 한 기록에 댓글이 연달아 달리면 매번 울리지 않고, 알림 내용만 최신 댓글로 바꾼다.
+ *     이전 알림을 이미 닫았다면 새 알림으로 떠서 평소처럼 울린다.
  */
-export type PushPayload = { title: string; body: string; url: string; tag: string };
+export type PushPayload = { title: string; body: string; url: string; tag: string; renotify: boolean };
 
 export type NotifiedWorkout = {
   id: string;
@@ -50,6 +55,7 @@ export const buildWorkoutPayload = ({
   if (reason === "companion") {
     return {
       body: `${actorNickname}님이 ${summary} 기록에 나를 함께한 친구로 남겼어요.`,
+      renotify: true,
       tag,
       title: "함께한 운동",
       url,
@@ -57,6 +63,7 @@ export const buildWorkoutPayload = ({
   }
   return {
     body: `${actorNickname}님이 ${summary} 기록을 공유했어요.`,
+    renotify: true,
     tag,
     title: workout.crewName ? `${workout.crewName} 새 기록` : "크루 새 기록",
     url,
@@ -66,5 +73,11 @@ export const buildWorkoutPayload = ({
 export const buildCommentPayload = ({ workoutId, body }: { workoutId: string; body: string }): PushPayload => {
   const text = body.trim().replace(/\s+/g, " ");
   const preview = text.length > COMMENT_PREVIEW_LENGTH ? `${text.slice(0, COMMENT_PREVIEW_LENGTH)}…` : text;
-  return { body: preview, tag: `comment-${workoutId}`, title: "내 기록에 새 댓글", url: getWorkoutPath(workoutId) };
+  return {
+    body: preview,
+    renotify: false,
+    tag: `comment-${workoutId}`,
+    title: "내 기록에 새 댓글",
+    url: getWorkoutPath(workoutId),
+  };
 };
