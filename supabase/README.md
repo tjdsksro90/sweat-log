@@ -65,3 +65,5 @@ docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < su
 - 모두 `security invoker`라서 권한은 RLS가 판단한다. 기록 삭제는 함수 없이 `workouts`를 지우면 상세가 cascade로 지워진다.
 - 사진 행도 cascade로 지워지지만 Storage 파일은 SQL로 지울 수 없다(`storage.protect_delete`). 기록 삭제 Server Action이 지운 뒤 Storage API로 기록 폴더를 비운다.
 - 사진은 기록 하나에 4장까지다. 넣을 때 트리거가 기록 행을 잠그고 세며, 넘으면 `too_many_photos`를 낸다. 순서(`position`)도 트리거가 마지막 다음 번호로 매긴다.
+- 서명 URL은 1시간(`PHOTO_URL_EXPIRES_IN`) 동안 유효하다. 한 번 받은 URL은 그동안 권한을 다시 보지 않아서, 크루를 나간 사람이나 이미 지운 사진도 최대 1시간까지 열린다.
+- 형식·크기 검증 범위: 바이트 시그니처(JPEG/PNG/WebP)와 가로·세로 확인은 앱의 Server Action(`uploadWorkoutPhoto`)으로 올릴 때만 한다. Storage API로 직접 올리면 버킷의 mime 타입(Content-Type 기준)과 1MB 제한만 걸린다. 작성자가 파일과 사진 행을 직접 넣으면 이 검증 없이 크루원에게도 보일 수 있다(올릴 수 있는 사람은 작성자뿐이다).
