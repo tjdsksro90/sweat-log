@@ -9,6 +9,7 @@ profiles ─< workouts ─┬─ run_details         (러닝: 거리, 시간)
                       ├─< strength_sets      (헬스: 종목, 세트, 무게, 횟수)
                       ├─< workout_companions (함께한 크루 친구)
                       └─< workout_comments
+profiles ─< push_subscriptions               (브라우저별 푸시 알림 구독)
 ```
 
 ## 권한 (RLS)
@@ -18,6 +19,7 @@ profiles ─< workouts ─┬─ run_details         (러닝: 거리, 시간)
 - 프로필은 본인과 같은 크루 친구의 것만 본다.
 - 크루 생성과 가입은 `create_crew`, `join_crew_by_code` 함수로만 한다.
 - 권한 확인 함수는 노출되지 않는 `private` 스키마에 둔다.
+- 푸시 구독은 본인 것만 읽고 지운다. 저장은 `save_push_subscription`으로만 하며(직접 insert·update 불가), 주요 브라우저 푸시 서비스 주소만 받고 사람마다 최근 10개까지만 남긴다. 같은 브라우저(endpoint)로 다른 계정이 알림을 켜면 주인이 바뀐다. 남의 구독은 서버 전용 secret key(service role)로 발송할 때만 읽는다.
 
 ## 로컬 개발
 
@@ -45,6 +47,7 @@ docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < su
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/workout-streak.sql
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/running-stats.sql
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/strength-records.sql
+docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/push-subscriptions.sql
 ```
 
 ## 기록 저장·목록 함수

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import type { WorkoutInput } from "@/entities/workout/model/contracts";
 import { toSaveWorkoutPayload } from "@/entities/workout/model/workout-mappers";
+import { captureWorkoutAudience, notifyWorkoutSaved } from "@/features/push-notification/server";
 import { requireUser } from "@/shared/api/supabase/require-user";
 
 import { getWorkoutErrorMessage, isUuid, parseWorkoutInput } from "../model/save-workout-input";
@@ -20,16 +21,20 @@ const revalidateWorkoutPaths = (id: string) => {
 
 // 작성(id 없음)과 수정(id 있음)을 함께 받는다. 권한은 save_workout(security invoker)과 RLS가 판단한다.
 export const saveWorkout = async (input: WorkoutInput): Promise<SaveWorkoutResult> => {
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
 
   const parsed = parseWorkoutInput(input);
   if (!parsed.ok) return { error: parsed.error, ok: false };
+
+  // 수정이면 새로 추가된 동행자·크루에만 알리도록 저장 전 공개 범위를 읽어 둔다.
+  const before = parsed.input.id ? await captureWorkoutAudience(supabase, parsed.input.id) : null;
 
   const { data: workoutId, error } = await supabase.rpc("save_workout", {
     p_input: toSaveWorkoutPayload(parsed.input),
   });
   if (error) return { error: getWorkoutErrorMessage(error), ok: false };
 
+  notifyWorkoutSaved({ actorId: user.id, before, supabase, workoutId });
   revalidateWorkoutPaths(workoutId);
   return { id: workoutId, ok: true };
 };
