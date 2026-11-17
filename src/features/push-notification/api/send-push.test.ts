@@ -5,6 +5,7 @@ const SUBSCRIPTIONS = [
   { auth: "a2", endpoint: "https://push.test/gone", p256dh: "p2", user_id: "b" },
   { auth: "a3", endpoint: "https://push.test/missing", p256dh: "p3", user_id: "c" },
   { auth: "a4", endpoint: "https://push.test/flaky", p256dh: "p4", user_id: "c" },
+  { auth: "a5", endpoint: "https://push.test/old-key", p256dh: "p5", user_id: "c" },
 ];
 
 const db = vi.hoisted(() => ({
@@ -43,6 +44,7 @@ vi.mock("web-push", () => {
     "https://push.test/flaky": 500,
     "https://push.test/gone": 410,
     "https://push.test/missing": 404,
+    "https://push.test/old-key": 403,
   };
   const sendNotification = vi.fn(async ({ endpoint }: { endpoint: string }) => {
     const status = STATUS[endpoint];
@@ -55,7 +57,7 @@ vi.mock("web-push", () => {
 const { sendPushMessages } = await import("./send-push");
 const webpush = (await import("web-push")).default;
 
-const PAYLOAD = { body: "본문", tag: "workout-w1", title: "제목", url: "/workouts/w1" };
+const PAYLOAD = { body: "본문", renotify: true, tag: "workout-w1", title: "제목", url: "/workouts/w1" };
 
 beforeEach(() => {
   db.deleted = [];
@@ -76,24 +78,30 @@ afterEach(() => {
 });
 
 describe("sendPushMessages", () => {
-  it("받는 사람의 모든 구독에 보내고 410·404 구독만 지운다", async () => {
+  it("받는 사람의 모든 구독에 보내고 410·404·403 구독만 지운다", async () => {
     await sendPushMessages([
       { payload: PAYLOAD, userId: "b" },
       { payload: PAYLOAD, userId: "c" },
     ]);
 
     expect(db.selectedUserIds).toEqual(["b", "c"]);
-    expect(webpush.sendNotification).toHaveBeenCalledTimes(4);
-    expect(db.deleted.sort()).toEqual(["https://push.test/gone", "https://push.test/missing"]);
+    expect(webpush.sendNotification).toHaveBeenCalledTimes(5);
+    // 500은 푸시 서비스의 일시 장애일 수 있어 남긴다.
+    expect(db.deleted.sort()).toEqual([
+      "https://push.test/gone",
+      "https://push.test/missing",
+      "https://push.test/old-key",
+    ]);
   });
 
-  it("각 구독에 그 사람의 알림 내용을 암호화 키와 함께 보낸다", async () => {
+  it("각 구독에 그 사람의 알림 내용을 암호화 키·timeout과 함께 보낸다", async () => {
     await sendPushMessages([{ payload: PAYLOAD, userId: "b" }]);
 
     expect(webpush.sendNotification).toHaveBeenCalledWith(
       { endpoint: "https://push.test/ok", keys: { auth: "a1", p256dh: "p1" } },
       JSON.stringify(PAYLOAD),
       expect.objectContaining({
+        timeout: 10_000,
         vapidDetails: { privateKey: "private", publicKey: "public", subject: "https://sweat-log.test" },
       }),
     );

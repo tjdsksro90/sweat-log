@@ -11,6 +11,16 @@ import type { PushPayload } from "../model/payload";
 // 하루 안에 기기가 켜지지 않으면 알림을 버린다. 오래된 "새 기록" 알림은 의미가 없다.
 const TTL_SECONDS = 60 * 60 * 24;
 
+// 푸시 서비스가 응답 없이 붙잡고 있으면 after() 작업이 함수 실행 시간 끝까지 남는다. 소켓이 이만큼 조용하면 끊는다.
+const SEND_TIMEOUT_MS = 10_000;
+
+/**
+ * 다시 보내도 소용없는 구독. 지운다.
+ * - 404·410: 브라우저가 구독을 끊었거나 사라졌다.
+ * - 403: 구독을 만든 VAPID 키와 지금 키가 다르다(키를 바꾼 뒤 남은 옛 구독). 브라우저는 다음에 켤 때 새 키로 다시 구독한다.
+ */
+const DEAD_SUBSCRIPTION_STATUS = new Set([403, 404, 410]);
+
 type PushConfig = { secretKey: string; vapid: { publicKey: string; privateKey: string; subject: string } };
 
 const getPushConfig = (): PushConfig | null => {
@@ -73,11 +83,10 @@ export const sendPushMessages = async (messages: PushMessage[]) => {
         await webpush.sendNotification(
           { endpoint: subscription.endpoint, keys: { auth: subscription.auth, p256dh: subscription.p256dh } },
           payload,
-          { TTL: TTL_SECONDS, vapidDetails: config.vapid },
+          { timeout: SEND_TIMEOUT_MS, TTL: TTL_SECONDS, vapidDetails: config.vapid },
         );
       } catch (sendError) {
-        // 410·404는 브라우저가 구독을 끊었거나 사라진 것이라 다시 보낼 수 없다.
-        if (sendError instanceof WebPushError && (sendError.statusCode === 404 || sendError.statusCode === 410)) {
+        if (sendError instanceof WebPushError && DEAD_SUBSCRIPTION_STATUS.has(sendError.statusCode)) {
           expiredEndpoints.push(subscription.endpoint);
           return;
         }
