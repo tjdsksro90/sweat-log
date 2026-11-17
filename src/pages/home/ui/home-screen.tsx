@@ -5,16 +5,19 @@ import { Button } from "@/shared/ui/button";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
 
 import { RunningStatsCard } from "./running-stats-card";
+import { StrengthRecordsCard } from "./strength-records-card";
 import { WeeklySummaryCard } from "./weekly-summary-card";
 
 export function HomeScreen({
   nickname,
   summary,
   runningStats,
+  strengthRecords,
 }: {
   nickname: string;
   summary: WeeklySummary;
   runningStats: RunningStats;
+  strengthRecords: StrengthRecord[];
 }) {
   return (
     <PageLayout
@@ -31,6 +34,9 @@ export function HomeScreen({
       </section>
       <WeeklySummaryCard summary={summary} />
       <RunningStatsCard stats={runningStats} />
+      <StrengthRecordsCard records={strengthRecords} />
     </PageLayout>
   );
 }
+
+import type { StrengthRecord } from "@/entities/exercise/model/strength-records";
