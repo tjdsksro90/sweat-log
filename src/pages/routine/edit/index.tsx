@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { countMyRoutines, getRoutine } from "@/entities/routine/api/server-queries";
 import { ROUTINE_LIMITS } from "@/entities/routine/model/routine";
-import { getWorkoutDetail } from "@/entities/workout/api/server-queries";
+import { getStrengthWorkoutTemplate } from "@/entities/workout/api/server-queries";
 import { deleteRoutine, saveRoutine } from "@/features/workout/api/routine-actions";
 import { createRoutineFormValues } from "@/features/workout/model/routine-form";
 import { isUuid } from "@/features/workout/model/save-workout-input";
@@ -20,11 +20,11 @@ export async function NewRoutinePage({ searchParams }: { searchParams: Promise<S
   const { from } = await searchParams;
   const [count, workout] = await Promise.all([
     countMyRoutines(),
-    isUuid(from) ? getWorkoutDetail(from) : null,
+    isUuid(from) ? getStrengthWorkoutTemplate(from) : null,
   ]);
   if (count >= ROUTINE_LIMITS.perUser) return <RoutineLimitScreen />;
 
-  const source = workout?.kind === "strength" ? { exercises: workout.exercises, name: workout.title ?? "" } : {};
+  const source = workout ? { exercises: workout.exercises, name: workout.title ?? "" } : {};
 
   return <RoutineForm title="새 루틴" initialValues={createRoutineFormValues(source)} saveRoutine={saveRoutine} />;
 }
