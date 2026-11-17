@@ -1,15 +1,20 @@
 import { LogoutButton } from "@/features/auth/ui/logout-button";
+import { PushSettings, type PushSettingsActions } from "@/features/push-notification/ui/push-settings";
 import { Card, CardContent } from "@/shared/ui/card";
 import { PageLayout } from "@/shared/ui/layouts/page-layout";
 
+import { PushAwareLogoutButton } from "./push-aware-logout-button";
 import { ThemeSettings } from "./theme-settings";
 
 export function SettingsScreen({
   nickname,
   logoutAction,
+  push,
 }: {
   nickname: string;
   logoutAction: (formData: FormData) => void | Promise<void>;
+  // 체험 데모는 넘기지 않는다. 알림 설정이 숨고 로그아웃도 구독을 건드리지 않는다.
+  push?: PushSettingsActions;
 }) {
   return (
     <PageLayout title="설정">
@@ -20,7 +25,12 @@ export function SettingsScreen({
         </CardContent>
       </Card>
       <ThemeSettings />
-      <LogoutButton action={logoutAction} />
+      {push && <PushSettings actions={push} />}
+      {push ? (
+        <PushAwareLogoutButton logoutAction={logoutAction} deleteSubscription={push.deleteSubscription} />
+      ) : (
+        <LogoutButton action={logoutAction} />
+      )}
     </PageLayout>
   );
 }
