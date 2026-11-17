@@ -165,7 +165,12 @@ select pg_temp.expect_invalid('무게 키 없음', '[{"name":"스쿼트","sets":
 select pg_temp.expect_invalid('모르는 키', '[{"name":"스쿼트","sets":[{"weight_kg":60,"reps":10,"rpe":8}]}]');
 select pg_temp.expect_invalid('모르는 종목 키', '[{"name":"스쿼트","memo":"x","sets":[{"weight_kg":60,"reps":10}]}]');
 
--- 경계값은 받는다
+select pg_temp.expect_invalid(repeat('💪', 41), '[{"name":"스쿼트","sets":[{"weight_kg":60,"reps":10}]}]');
+
+-- 경계값은 받는다. 이름 길이는 코드 포인트(char_length)로 세서 이모지 40개도 된다.
+insert into public.workout_routines (name, exercises)
+values (repeat('💪', 40), '[{"name":"스쿼트","sets":[{"weight_kg":60,"reps":10}]}]');
+
 insert into public.workout_routines (name, exercises)
 select repeat('가', 40), jsonb_agg(jsonb_build_object('name', repeat('나', 50), 'sets', (
   select jsonb_agg(jsonb_build_object('weight_kg', 1000, 'reps', 1000)) from generate_series(1, 30)
@@ -183,7 +188,7 @@ end $$;
 -- 한 사람당 30개까지
 insert into public.workout_routines (name, exercises)
 select '루틴' || n, '[{"name":"푸시업","sets":[{"weight_kg":null,"reps":20}]}]'
-from generate_series(1, 28) as n;
+from generate_series(1, 27) as n;
 
 do $$
 begin

@@ -65,6 +65,16 @@ describe("루틴 → 폼 입력", () => {
     expect(createRoutineFormValues({ name: `  ${"가".repeat(50)}  ` }).name).toHaveLength(40);
   });
 
+  it("이모지가 걸쳐 있어도 코드 포인트 단위로 잘라 반쪽 문자를 남기지 않는다", () => {
+    const name = createRoutineFormValues({ name: `${"가".repeat(39)}💪💪` }).name;
+    expect(name).toBe(`${"가".repeat(39)}💪`);
+    expect(name.isWellFormed()).toBe(true);
+  });
+
+  it("잘라서 끝에 남은 공백은 지운다", () => {
+    expect(createRoutineFormValues({ name: `${"가".repeat(39)} 나` }).name).toBe("가".repeat(39));
+  });
+
   it("불러올 때마다 새 key를 만들어, 같은 루틴을 두 번 붙여도 key가 겹치지 않는다", () => {
     const once = loadRoutineExercises([], LOWER_BODY, "replace");
     const twice = loadRoutineExercises(once, LOWER_BODY, "append");
@@ -147,6 +157,15 @@ describe("루틴 검증", () => {
     expect(validateRoutineForm({ ...values, name: "   " }).name).toBe("루틴 이름을 적어 주세요.");
     expect(validateRoutineForm({ ...values, name: "가".repeat(40) }).name).toBeUndefined();
     expect(validateRoutineForm({ ...values, name: "가".repeat(41) }).name).toBe("루틴 이름은 40자까지예요.");
+  });
+
+  it("이름 길이는 DB char_length처럼 이모지를 한 글자로 센다", () => {
+    const values = createRoutineFormValues({ exercises: LOWER_BODY });
+    expect("💪".repeat(40)).toHaveLength(80);
+    expect(validateRoutineForm({ ...values, name: "💪".repeat(40) }).name).toBeUndefined();
+    expect(validateRoutineForm({ ...values, name: "💪".repeat(41) }).name).toBe("루틴 이름은 40자까지예요.");
+    expect(parseRoutineInput({ exercises: LOWER_BODY, name: "💪".repeat(40) }).ok).toBe(true);
+    expect(parseRoutineInput({ exercises: LOWER_BODY, name: "💪".repeat(41) }).ok).toBe(false);
   });
 
   it("종목·세트는 기록과 같은 규칙으로 막는다", () => {

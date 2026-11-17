@@ -14,6 +14,13 @@ import {
 } from "./workout-form";
 import { toStrengthExercises, validateStrengthExercises, type WorkoutFormErrors } from "./workout-input";
 
+/**
+ * 루틴 이름 길이는 DB char_length와 같은 코드 포인트 단위로 센다. JS length(UTF-16)는 이모지를 2로 세서
+ * 40자 이름을 거절하거나, 자를 때 이모지 반쪽(서로게이트)을 남긴다.
+ */
+const codePoints = (value: string) => Array.from(value);
+const routineNameLength = (name: string) => codePoints(name).length;
+
 export type RoutineFormValues = {
   id: string | null;
   name: string;
@@ -30,7 +37,10 @@ export const createRoutineFormValues = (
       : [createEmptyExercise()],
   id: source.id ?? null,
   // 기록 제목은 50자까지라 루틴 이름(40자)보다 길 수 있다.
-  name: (source.name ?? "").trim().slice(0, ROUTINE_LIMITS.name),
+  name: codePoints((source.name ?? "").trim())
+    .slice(0, ROUTINE_LIMITS.name)
+    .join("")
+    .trim(),
 });
 
 // 처음 값과 달라졌으면 이탈할 때 확인한다. key는 새로 만들 때마다 바뀌므로 비교에서 뺀다.
@@ -47,7 +57,7 @@ export const validateRoutineForm = (values: RoutineFormValues): WorkoutFormError
   const errors: WorkoutFormErrors = {};
   const name = values.name.trim();
   if (name.length === 0) errors.name = "루틴 이름을 적어 주세요.";
-  else if (name.length > ROUTINE_LIMITS.name) errors.name = `루틴 이름은 ${ROUTINE_LIMITS.name}자까지예요.`;
+  else if (routineNameLength(name) > ROUTINE_LIMITS.name) errors.name = `루틴 이름은 ${ROUTINE_LIMITS.name}자까지예요.`;
 
   validateStrengthExercises(values.exercises, errors);
   return errors;
@@ -83,7 +93,7 @@ export const parseRoutineInput = (value: unknown): ParseRoutineInputResult => {
 
   const trimmed = name.trim();
   if (trimmed.length === 0) return { error: "루틴 이름을 적어 주세요.", ok: false };
-  if (trimmed.length > ROUTINE_LIMITS.name) {
+  if (routineNameLength(trimmed) > ROUTINE_LIMITS.name) {
     return { error: `루틴 이름은 ${ROUTINE_LIMITS.name}자까지예요.`, ok: false };
   }
 
