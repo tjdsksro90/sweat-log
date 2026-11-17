@@ -16,7 +16,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => router }));
 vi.mock("@/features/workout-photo/lib/compress-photo", () => ({
   compressPhoto: vi.fn(async (file: File) =>
     file.name.startsWith("broken")
-      ? { error: "이 사진은 읽을 수 없어요. JPG나 PNG 사진을 골라 주세요." }
+      ? { error: "이 사진은 읽을 수 없어요. JPG, PNG, WebP 사진을 골라 주세요." }
       : { blob: new Blob([file.name], { type: "image/jpeg" }), width: 1600, height: 1200 },
   ),
 }));
@@ -97,7 +97,7 @@ describe("WorkoutForm 사진", () => {
     const { user, goToFinish, fileInput } = renderForm({ photoActions: okActions() });
     await goToFinish();
 
-    await user.upload(fileInput(), [photoFile("broken.heic")]);
+    await user.upload(fileInput(), [photoFile("broken.jpg")]);
     expect(await screen.findByRole("alert")).toHaveTextContent("이 사진은 읽을 수 없어요.");
 
     await user.upload(

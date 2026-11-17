@@ -17,6 +17,16 @@ export const getResizedSize = ({ width, height }: Size, maxSide: number): Size =
   };
 };
 
+/**
+ * 디코딩하면서 바로 줄일 가로 폭(createImageBitmap의 resizeWidth). 한쪽만 주어 비율은 브라우저가 지킨다.
+ * 헤더의 가로·세로는 EXIF 회전 전 값이라, 브라우저가 회전 뒤 폭으로 해석하면 짧은 변이 maxSide가 된다.
+ * 짧은 변도 maxSide 이상인 사진에만 써서 어느 쪽으로 해석해도 키우지 않게 한다. 최종 크기는 캔버스가 다시 맞춘다.
+ */
+export const getDecodeWidth = ({ width, height }: Size, maxSide: number): number | null => {
+  if (Math.min(width, height) < maxSide) return null;
+  return getResizedSize({ width, height }, maxSide).width;
+};
+
 // 대부분은 첫 화질에서 끝난다. 무늬가 많은 사진만 화질을 낮춰 용량을 맞춘다.
 export const JPEG_QUALITIES = [0.82, 0.72, 0.6, 0.5] as const;
 

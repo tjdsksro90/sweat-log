@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { encodeWithinLimit, getResizedSize } from "./resize";
+import { encodeWithinLimit, getDecodeWidth, getResizedSize } from "./resize";
 
 describe("getResizedSize", () => {
   it("긴 변을 기준으로 비율을 지켜 줄인다", () => {
@@ -19,6 +19,18 @@ describe("getResizedSize", () => {
 });
 
 const blobOf = (size: number) => new Blob([new Uint8Array(size)]);
+
+describe("getDecodeWidth", () => {
+  it("큰 사진은 긴 변이 maxSide가 되는 가로 폭으로 디코딩한다", () => {
+    expect(getDecodeWidth({ width: 4032, height: 3024 }, 1600)).toBe(1600);
+    expect(getDecodeWidth({ width: 3024, height: 4032 }, 1600)).toBe(1200);
+  });
+
+  it("짧은 변이 maxSide보다 작으면 디코딩 때 줄이지 않는다(회전 해석에 따라 키울 수 있어서)", () => {
+    expect(getDecodeWidth({ width: 1200, height: 900 }, 1600)).toBeNull();
+    expect(getDecodeWidth({ width: 8000, height: 1000 }, 1600)).toBeNull();
+  });
+});
 
 describe("encodeWithinLimit", () => {
   it("첫 화질에서 한도 안이면 그대로 쓴다", async () => {

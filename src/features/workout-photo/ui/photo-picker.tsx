@@ -87,7 +87,8 @@ export function PhotoPicker({
     <FieldSet className="min-w-0 gap-3" aria-describedby={descriptionId}>
       <FieldLegend variant="label">사진 (선택)</FieldLegend>
       <FieldDescription id={descriptionId}>
-        {unavailableMessage ?? `${MAX_WORKOUT_PHOTOS}장까지 붙일 수 있어요. 올릴 때 크기를 줄여요.`}
+        {unavailableMessage ??
+          `JPG, PNG, WebP 사진을 ${MAX_WORKOUT_PHOTOS}장까지 붙일 수 있어요. 올릴 때 크기를 줄여요.`}
       </FieldDescription>
 
       {draft.items.length > 0 && (
@@ -139,7 +140,8 @@ export function PhotoPicker({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        // HEIC는 Chrome·Android가 읽지 못해 받지 않는다. iOS는 이 목록을 보고 HEIC 사진을 JPEG로 바꿔 넘긴다.
+        accept="image/jpeg,image/png,image/webp"
         multiple
         hidden
         onChange={handleFiles}
