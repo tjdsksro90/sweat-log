@@ -1,4 +1,5 @@
 import type { CrewDetail, CrewSummary } from "@/entities/crew/model/crew";
+import { buildStrengthRecords } from "@/entities/exercise/model/build-strength-records";
 import type {
   WeeklySummary,
   WorkoutDetail,
@@ -213,6 +214,22 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
       ),
     });
   };
+  const getStrengthRecords = async (today = getKstToday(now())) =>
+    buildStrengthRecords(
+      read()
+        .workouts.filter(
+          (row) =>
+            row.kind === "strength" &&
+            (row.user_id === DEMO_USER.id || row.companions.some(({ profile }) => profile?.id === DEMO_USER.id)),
+        )
+        .map((row) => ({
+          workoutId: row.id,
+          workoutDate: row.workout_date,
+          createdAt: row.created_at,
+          sets: row.sets.map((set) => ({ name: set.exercise_name, weightKg: set.weight_kg })),
+        })),
+      today,
+    );
   const getMyCrews = async (): Promise<CrewSummary[]> => [
     { id: DEMO_CREW.id, name: DEMO_CREW.name, memberCount: DEMO_CREW.members.length },
   ];
@@ -343,6 +360,7 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
     getWorkoutDetail,
     getWeeklySummary,
     getRunningStats,
+    getStrengthRecords,
     getMyCrews,
     getCrew,
     getWorkoutFormCrews,
@@ -378,6 +396,7 @@ export const getWorkoutPage = browserOnly(sharedStore.getWorkoutPage);
 export const getWorkoutDetail = browserOnly(sharedStore.getWorkoutDetail);
 export const getWeeklySummary = browserOnly(sharedStore.getWeeklySummary);
 export const getRunningStats = browserOnly(sharedStore.getRunningStats);
+export const getStrengthRecords = browserOnly(sharedStore.getStrengthRecords);
 export const getMyCrews = browserOnly(sharedStore.getMyCrews);
 export const getCrew = browserOnly(sharedStore.getCrew);
 export const getWorkoutFormCrews = browserOnly(sharedStore.getWorkoutFormCrews);
