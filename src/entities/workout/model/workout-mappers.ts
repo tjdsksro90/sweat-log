@@ -2,7 +2,14 @@
  * DB 행 ↔ 계약 타입(contracts.ts) 변환. 조회 함수(api/server-queries.ts)와 저장 Server Action이 쓴다.
  * 행 타입은 server-queries.ts의 select 문자열이 돌려주는 모양이다. select를 바꾸면 여기도 같이 바꾼다.
  */
-import type { StrengthExercise, WorkoutDetail, WorkoutInput, WorkoutListItem, WorkoutPerson } from "./contracts";
+import type {
+  StrengthExercise,
+  WorkoutDetail,
+  WorkoutInput,
+  WorkoutListItem,
+  WorkoutPerson,
+  WorkoutPhoto,
+} from "./contracts";
 import { isWorkoutKind, type WorkoutKind } from "./types";
 
 export type WorkoutPersonRow = { id: string; nickname: string };
@@ -30,9 +37,13 @@ export type WorkoutListRow = {
   run: { distance_meters: number; duration_seconds: number } | null;
   sets: StrengthSetRow[];
   comments: { count: number }[];
+  // 체험 데모의 샘플 행에는 사진이 없어서 비워 둘 수 있다.
+  photos?: { count: number }[];
 };
 
-export type WorkoutDetailRow = WorkoutListRow & { memo: string | null };
+export type WorkoutPhotoRow = { id: string; path: string; position: number; width: number; height: number };
+
+export type WorkoutDetailRow = WorkoutListRow & { memo: string | null; photo_rows?: WorkoutPhotoRow[] };
 
 // 크루를 나간 작성자처럼 프로필을 볼 수 없는 경우
 const UNKNOWN_NICKNAME = "알 수 없음";
@@ -133,6 +144,7 @@ const toCommonFields = (row: WorkoutListRow, viewerId?: string) => {
         : null,
     durationSeconds: row.duration_seconds,
     commentCount: row.comments[0]?.count ?? 0,
+    photoCount: row.photos?.[0]?.count ?? 0,
   };
 };
 
@@ -145,13 +157,25 @@ export const toWorkoutListItem = (row: WorkoutListRow): WorkoutListItem => {
   };
 };
 
-export const toWorkoutDetail = (row: WorkoutDetailRow, viewerId: string): WorkoutDetail => {
+// 사진 행을 순서대로 놓고 경로를 서명 URL로 바꾼다. 서명하지 못한 사진도 행은 남긴다(url null).
+// 수정 폼이 4장 자리를 바르게 세고 그 사진을 뺄 수 있어야 해서다. 보여 줄 때 거르는 것은 화면 몫이다.
+export const toWorkoutPhotos = (rows: WorkoutPhotoRow[], signedUrls: Record<string, string>): WorkoutPhoto[] =>
+  [...rows]
+    .sort((a, b) => a.position - b.position)
+    .map((row) => ({ id: row.id, url: signedUrls[row.path] ?? null, width: row.width, height: row.height }));
+
+export const toWorkoutDetail = (
+  row: WorkoutDetailRow,
+  viewerId: string,
+  signedUrls: Record<string, string> = {},
+): WorkoutDetail => {
   const common = toCommonFields(row, viewerId);
 
   return {
     ...common,
     memo: row.memo,
     exercises: common.kind === "strength" ? toExercises(row.sets) : [],
+    photos: toWorkoutPhotos(row.photo_rows ?? [], signedUrls),
     isMine: row.user_id === viewerId,
     createdAt: row.created_at,
   };

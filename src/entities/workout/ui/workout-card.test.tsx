@@ -12,7 +12,15 @@ describe("WorkoutCard", () => {
       "href",
       `/workouts/${SAMPLE_WORKOUTS[0].id}`,
     );
-    for (const text of ["7.20km", "40:30", "5'38\"", "함께한 친구 · 지은", "공유 크루 · 새벽러닝", "댓글 2개"]) {
+    for (const text of [
+      "7.20km",
+      "40:30",
+      "5'38\"",
+      "함께한 친구 · 지은",
+      "공유 크루 · 새벽러닝",
+      "댓글 2개",
+      "사진 2장",
+    ]) {
       expect(screen.getByText(text)).toBeInTheDocument();
     }
   });

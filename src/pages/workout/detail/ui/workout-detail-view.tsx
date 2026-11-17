@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { WorkoutDetail } from "@/entities/workout/model/contracts";
 import { WORKOUT_KIND_LABELS } from "@/entities/workout/model/types";
 import { WorkoutMetrics } from "@/entities/workout/ui/workout-card";
+import { WorkoutPhotoGallery } from "@/entities/workout/ui/workout-photo-gallery";
 import { AppLink } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
@@ -46,6 +47,10 @@ export function WorkoutDetailView({ workout, comments }: { workout: WorkoutDetai
           </dl>
         </CardContent>
       </Card>
+      <WorkoutPhotoGallery
+        photos={workout.photos}
+        label={workout.title || `${WORKOUT_KIND_LABELS[workout.kind]} 기록`}
+      />
       {workout.kind === "strength" &&
         workout.exercises.map((exercise, exerciseIndex) => (
           <Card key={`${exerciseIndex}-${exercise.name}`}>

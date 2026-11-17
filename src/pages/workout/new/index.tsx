@@ -1,6 +1,7 @@
 import { isWorkoutKind } from "@/entities/workout/model/types";
 import { saveWorkout } from "@/features/workout/api/workout-actions";
 import { createWorkoutFormValues, getTodayInSeoul } from "@/features/workout/model/workout-form";
+import { deleteWorkoutPhoto, uploadWorkoutPhoto } from "@/features/workout-photo/api/photo-actions";
 import { requireUser } from "@/shared/api/supabase/require-user";
 import { WorkoutForm } from "@/widgets/workout-form";
 import { getWorkoutFormCrews } from "@/widgets/workout-form/api/get-form-crews";
@@ -22,6 +23,7 @@ export async function NewWorkoutPage({ searchParams }: { searchParams: Promise<S
       today={today}
       closeHref="/workouts"
       saveWorkout={saveWorkout}
+      photoActions={{ upload: uploadWorkoutPhoto, remove: deleteWorkoutPhoto }}
     />
   );
 }

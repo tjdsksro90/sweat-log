@@ -291,6 +291,45 @@ export type Database = {
           },
         ];
       };
+      workout_photos: {
+        Row: {
+          created_at: string;
+          height: number;
+          id: string;
+          path: string;
+          position: number;
+          width: number;
+          workout_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          height: number;
+          id?: string;
+          path: string;
+          position?: number;
+          width: number;
+          workout_id: string;
+        };
+        Update: {
+          created_at?: string;
+          height?: number;
+          id?: string;
+          path?: string;
+          position?: number;
+          width?: number;
+          workout_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "workout_photos_workout_id_fkey";
+            columns: ["workout_id"];
+            isOneToOne: false;
+            referencedRelation: "workouts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       workouts: {
         Row: {
           created_at: string;

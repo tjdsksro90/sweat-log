@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { WeeklySummary, WorkoutDetail, WorkoutListFilter, WorkoutPage } from "@/entities/workout/model/contracts";
+import { PHOTO_URL_EXPIRES_IN, WORKOUT_PHOTO_BUCKET } from "@/entities/workout/model/photo";
 import { RUNNING_STATS_MONTHS, type RunningStats, toRunningStats } from "@/entities/workout/model/running-stats";
 import { addDays, buildWeeklySummary, getKstToday, getWeekStart } from "@/entities/workout/model/weekly-summary";
 import { decodeWorkoutCursor, encodeWorkoutCursor } from "@/entities/workout/model/workout-cursor";
@@ -20,10 +21,11 @@ const LIST_SELECT = `
   companions:workout_companions(user_id, profile:profiles!workout_companions_user_id_fkey(id, nickname)),
   run:run_details(distance_meters, duration_seconds),
   sets:strength_sets(exercise_name, exercise_order, set_order, weight_kg, reps),
-  comments:workout_comments(count)
+  comments:workout_comments(count),
+  photos:workout_photos(count)
 `;
 
-const DETAIL_SELECT = `${LIST_SELECT}, memo`;
+const DETAIL_SELECT = `${LIST_SELECT}, memo, photo_rows:workout_photos(id, path, position, width, height)`;
 
 /**
  * 기록 목록. 날짜 → 작성 시각 내림차순으로 20개씩.
@@ -72,7 +74,36 @@ export const getWorkoutDetail = async (id: string): Promise<WorkoutDetail | null
   const { data, error } = await supabase.from("workouts").select(DETAIL_SELECT).eq("id", id).maybeSingle();
 
   if (error) throw error;
-  return data ? toWorkoutDetail(data, user.id) : null;
+  if (!data) return null;
+
+  return toWorkoutDetail(
+    data,
+    user.id,
+    await signPhotoPaths(
+      supabase,
+      data.photo_rows.map((photo) => photo.path),
+    ),
+  );
+};
+
+/**
+ * 비공개 버킷이라 사진마다 서명 URL을 만든다. 발급도 Storage 정책(그 기록을 볼 수 있는 사람)을 따른다.
+ * 사진을 못 불러와도 기록은 보여야 하므로 실패는 빈 결과로 넘기고, 화면은 그 사진을 빼고 그린다.
+ */
+const signPhotoPaths = async (
+  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  paths: string[],
+): Promise<Record<string, string>> => {
+  if (paths.length === 0) return {};
+
+  const { data, error } = await supabase.storage
+    .from(WORKOUT_PHOTO_BUCKET)
+    .createSignedUrls(paths, PHOTO_URL_EXPIRES_IN);
+  if (error) return {};
+
+  return Object.fromEntries(
+    data.flatMap((item) => (item.path && item.signedUrl && !item.error ? [[item.path, item.signedUrl]] : [])),
+  );
 };
 
 /**
