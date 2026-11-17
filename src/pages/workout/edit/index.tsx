@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getWorkoutDetail } from "@/entities/workout/api/server-queries";
 import { deleteWorkout, saveWorkout } from "@/features/workout/api/workout-actions";
 import { fromWorkoutDetail, getTodayInSeoul } from "@/features/workout/model/workout-form";
+import { deleteWorkoutPhoto, uploadWorkoutPhoto } from "@/features/workout-photo/api/photo-actions";
 import { requireUser } from "@/shared/api/supabase/require-user";
 import { WorkoutForm } from "@/widgets/workout-form";
 import { getWorkoutFormCrews } from "@/widgets/workout-form/api/get-form-crews";
@@ -27,6 +28,8 @@ export async function EditWorkoutPage({ workoutId }: { workoutId: string }) {
       closeHref={`/workouts/${detail.id}`}
       saveWorkout={saveWorkout}
       deleteWorkout={deleteWorkout}
+      initialPhotos={detail.photos}
+      photoActions={{ upload: uploadWorkoutPhoto, remove: deleteWorkoutPhoto }}
     />
   );
 }

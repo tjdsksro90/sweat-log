@@ -4,6 +4,7 @@ import { type FormEvent, useEffect, useRef, useState, useTransition } from "reac
 
 import { TrashIcon, XIcon } from "@phosphor-icons/react";
 
+import type { WorkoutPhoto } from "@/entities/workout/model/contracts";
 import {
   isWorkoutFormDirty,
   WORKOUT_FORM_STEP_LABELS,
@@ -11,6 +12,9 @@ import {
   type WorkoutFormValues,
 } from "@/features/workout/model/workout-form";
 import { toWorkoutInput, validateWorkoutStep } from "@/features/workout/model/workout-input";
+import { isPhotoDraftDirty, type PhotoActions, syncPhotoDraft } from "@/features/workout-photo/model/photo-draft";
+import { usePhotoDraft } from "@/features/workout-photo/model/use-photo-draft";
+import { PhotoPicker } from "@/features/workout-photo/ui/photo-picker";
 import { useAppRouter } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
 import { FieldError } from "@/shared/ui/field";
@@ -31,6 +35,9 @@ type WorkoutFormProps = {
   closeHref: string;
   saveWorkout: SaveWorkoutAction;
   deleteWorkout?: DeleteWorkoutAction; // 수정 화면에만
+  initialPhotos?: WorkoutPhoto[]; // 수정 화면에만. 기록에 이미 붙은 사진
+  photoActions?: PhotoActions; // 없으면 사진 고르기를 보여 주지 않는다
+  photoUnavailableMessage?: string; // 체험 데모처럼 사진을 막을 때 고르기 자리에 보여 줄 안내
 };
 
 /**
@@ -46,6 +53,9 @@ export function WorkoutForm({
   closeHref,
   saveWorkout,
   deleteWorkout,
+  initialPhotos,
+  photoActions,
+  photoUnavailableMessage,
 }: WorkoutFormProps) {
   const router = useAppRouter();
   const [values, setValues] = useState(initialValues);
@@ -53,6 +63,8 @@ export function WorkoutForm({
   // 다음·저장을 한 번 누른 뒤부터 오류를 보여주고, 고치는 대로 다시 계산한다.
   const [showErrors, setShowErrors] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  // 기록은 저장됐는데 사진 일부를 반영하지 못한 기록 id. 사진은 두고 기록을 보러 갈 수 있게 한다.
+  const [savedWithPhotoError, setSavedWithPhotoError] = useState<string | null>(null);
   const [isSaving, startSaving] = useTransition();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -62,7 +74,9 @@ export function WorkoutForm({
   const step = WORKOUT_FORM_STEPS[stepIndex];
   const isLastStep = stepIndex === WORKOUT_FORM_STEPS.length - 1;
   const errors = showErrors ? validateWorkoutStep(values, step, today) : {};
-  const isDirty = isWorkoutFormDirty(initialValues, values);
+  const photos = usePhotoDraft(initialPhotos);
+  const showPhotos = Boolean(photoActions || photoUnavailableMessage);
+  const isDirty = isWorkoutFormDirty(initialValues, values) || isPhotoDraftDirty(photos.draft);
   const guard = useLeaveGuard(isDirty);
 
   /**
@@ -108,6 +122,24 @@ export function WorkoutForm({
         setServerError(saved.error);
         return;
       }
+
+      /**
+       * 사진은 기록을 저장한 뒤에 반영한다(새 기록은 그때 id가 생긴다). 사진이 실패해도 기록은 되돌리지 않는다.
+       * 폼을 수정 상태(id 있음)로 바꾸고 실패한 사진만 남겨 두어, 다시 저장하면 기록을 갱신하고 남은 사진만 다시 시도한다.
+       */
+      if (photoActions && isPhotoDraftDirty(photos.draft)) {
+        const synced = await syncPhotoDraft(photos.draft, saved.id, photoActions);
+        photos.setDraft(synced.draft);
+        if (synced.failedCount > 0) {
+          setValues((current) => ({ ...current, id: saved.id }));
+          setSavedWithPhotoError(saved.id);
+          setServerError(
+            `기록은 저장했어요. 사진 ${synced.failedCount}장은 반영하지 못했어요.${synced.firstError ? ` ${synced.firstError}` : ""} 다시 저장하면 남은 사진만 다시 시도해요.`,
+          );
+          return;
+        }
+      }
+
       guard.allowLeave();
       router.replace(`/workouts/${saved.id}`);
     });
@@ -203,10 +235,36 @@ export function WorkoutForm({
               onChange={update}
             />
           )}
+          {step === "finish" && showPhotos && (
+            <PhotoPicker
+              draft={photos.draft}
+              onChange={(change) => {
+                setServerError(null);
+                photos.setDraft(change);
+              }}
+              trackObjectUrl={photos.trackObjectUrl}
+              releaseObjectUrl={photos.releaseObjectUrl}
+              disabled={isSaving}
+              unavailableMessage={photoActions ? undefined : photoUnavailableMessage}
+            />
+          )}
         </div>
 
         <div className="mt-auto flex flex-col gap-3">
           {serverError && <FieldError>{serverError}</FieldError>}
+          {savedWithPhotoError && (
+            <Button
+              variant="link"
+              className="self-start"
+              disabled={isSaving}
+              onClick={() => {
+                guard.allowLeave();
+                router.replace(`/workouts/${savedWithPhotoError}`);
+              }}
+            >
+              사진은 두고 기록 보기
+            </Button>
+          )}
           <div className="flex gap-2">
             {stepIndex > 0 && (
               <Button
