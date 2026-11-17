@@ -11,14 +11,13 @@ describe("공유 데모 저장소의 서버 접근 차단", () => {
     for (const read of [
       () => store.getWorkoutPage(),
       () => store.getWorkoutDetail("missing"),
-      () => store.getWeeklySummary(),
-      () => store.getRunningStats(),
       () => store.getMyCrews(),
       () => store.getCrew(DEMO_CREW.id),
       () => store.getWorkoutFormCrews(),
       () => store.getWorkoutComments("missing"),
     ])
       await expect(read()).rejects.toThrow("브라우저에서만");
+    expect(() => store.readHome()).toThrow("브라우저에서만");
   });
 
   it("서버에서는 공유 쓰기와 reset도 거부된다", async () => {

@@ -31,6 +31,13 @@ import type { WorkoutFormCrew } from "@/widgets/workout-form/model/types";
 import { createSampleData, createSampleRoutines, DEMO_CREW, DEMO_USER, type DemoState } from "./sample-data";
 
 export const DEMO_STORAGE_KEY = "sweat-log:demo:v1";
+export type DemoHomeData = {
+  // 집계 기준일(KST, YYYY-MM-DD)
+  today: string;
+  summary: WeeklySummary;
+  runningStats: RunningStats;
+  strengthRecords: ReturnType<typeof buildStrengthRecords>;
+};
 const PAGE_SIZE = 20;
 export type DemoStorage = Pick<Storage, "getItem" | "setItem">;
 export type DemoStoreOptions = {
@@ -194,7 +201,7 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
     const row = read().workouts.find((workout) => workout.id === id);
     return row ? structuredClone(toWorkoutDetail(withComments(row), DEMO_USER.id)) : null;
   };
-  const getWeeklySummary = async (today = getKstToday(now())): Promise<WeeklySummary> => {
+  const readWeeklySummary = (today: string): WeeklySummary => {
     const mine = read().workouts.filter((row) => row.user_id === DEMO_USER.id);
     const dates = new Set(mine.map((row) => row.workout_date));
     let date = dates.has(today) ? today : addDays(today, -1);
@@ -211,7 +218,7 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
     });
   };
   // 실제 앱의 DB 함수와 같은 범위(내가 쓰거나 함께한 러닝)를 같은 순수 함수 규칙으로 집계한다.
-  const getRunningStats = async (today = getKstToday(now())): Promise<RunningStats> => {
+  const readRunningStats = (today: string): RunningStats => {
     const mine = read().workouts.filter(
       (row) => row.user_id === DEMO_USER.id || row.companions.some(({ profile }) => profile?.id === DEMO_USER.id),
     );
@@ -233,7 +240,7 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
       ),
     });
   };
-  const getStrengthRecords = async (today = getKstToday(now())) =>
+  const readStrengthRecords = (today: string) =>
     buildStrengthRecords(
       read()
         .workouts.filter(
@@ -249,6 +256,19 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
         })),
       today,
     );
+  const getWeeklySummary = async (today = getKstToday(now())) => readWeeklySummary(today);
+  const getRunningStats = async (today = getKstToday(now())) => readRunningStats(today);
+  const getStrengthRecords = async (today = getKstToday(now())) => readStrengthRecords(today);
+  /**
+   * 홈 화면 세 카드를 한 번에 동기로 읽는다. 저장소가 메모리라 기다릴 것이 없다.
+   * 서버는 미리 그릴 샘플 홈을, 브라우저는 첫 프레임부터 비지 않는 홈을 이걸로 만든다.
+   */
+  const readHome = (today = getKstToday(now())): DemoHomeData => ({
+    today,
+    summary: readWeeklySummary(today),
+    runningStats: readRunningStats(today),
+    strengthRecords: readStrengthRecords(today),
+  });
   const getMyCrews = async (): Promise<CrewSummary[]> => [
     { id: DEMO_CREW.id, name: DEMO_CREW.name, memberCount: DEMO_CREW.members.length },
   ];
@@ -407,6 +427,7 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
     getWeeklySummary,
     getRunningStats,
     getStrengthRecords,
+    readHome,
     getMyCrews,
     getCrew,
     getWorkoutFormCrews,
@@ -444,9 +465,10 @@ const browserOnly =
 
 export const getWorkoutPage = browserOnly(sharedStore.getWorkoutPage);
 export const getWorkoutDetail = browserOnly(sharedStore.getWorkoutDetail);
-export const getWeeklySummary = browserOnly(sharedStore.getWeeklySummary);
-export const getRunningStats = browserOnly(sharedStore.getRunningStats);
-export const getStrengthRecords = browserOnly(sharedStore.getStrengthRecords);
+export const readHome = (): DemoHomeData => {
+  assertBrowser();
+  return sharedStore.readHome();
+};
 export const getMyCrews = browserOnly(sharedStore.getMyCrews);
 export const getCrew = browserOnly(sharedStore.getCrew);
 export const getWorkoutFormCrews = browserOnly(sharedStore.getWorkoutFormCrews);

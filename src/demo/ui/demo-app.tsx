@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useRef } from "react";
 
-import { useSearchParams } from "next/navigation";
-
 import { type AppNavigation, AppNavigationProvider } from "@/shared/lib/app-navigation";
 import { BottomNavigation } from "@/widgets/bottom-navigation";
 
 import { DEMO_APP_PATH, parseAppPath, readAppPath, toDemoHref } from "../model/demo-path";
+import { DEMO_PRERENDER_ID } from "../model/prerender-guard";
+import type { DemoHomeData } from "../store";
+import { notifyDemoLocationChange, useDemoSearch, useHydrated } from "./demo-location";
 import { DemoNoticeProvider } from "./demo-notice";
 import { DemoRoutes } from "./demo-routes";
 
@@ -16,10 +17,15 @@ const HASH_SCROLL_FRAMES = 30;
 /**
  * 체험 앱의 루트. 실제 앱 화면을 그대로 쓰고, 이동과 데이터만 바꿔 끼운다.
  * 이동은 `?path=`만 바꾸는 history 갱신이라 서버를 다시 부르지 않는다.
+ *
+ * 서버는 처음 방문과 같은 샘플(`prerenderedHome`)로 홈을 미리 그린다. hydration은 그 DOM을 그대로 이어받고,
+ * 끝나면 실제 주소와 이 탭의 저장소로 다시 그린다. 미리 그린 홈이 맞지 않는 방문(다른 경로, 저장된 체험,
+ * 지난 날짜)은 페이지의 가드 스크립트가 감싼 요소를 숨겨 두고, hydration 뒤 id를 떼어 다시 보인다.
  */
-export function DemoApp() {
-  const searchParams = useSearchParams();
-  const location = useMemo(() => parseAppPath(readAppPath(searchParams)), [searchParams]);
+export function DemoApp({ prerenderedHome }: { prerenderedHome: DemoHomeData }) {
+  const search = useDemoSearch();
+  const hydrated = useHydrated();
+  const location = useMemo(() => parseAppPath(readAppPath(search)), [search]);
   const scrollOnNextPath = useRef(false);
 
   const navigation = useMemo<AppNavigation>(
@@ -28,10 +34,12 @@ export function DemoApp() {
       push: (path, options) => {
         scrollOnNextPath.current = options?.scroll !== false;
         window.history.pushState(null, "", toDemoHref(path));
+        notifyDemoLocationChange();
       },
       replace: (path) => {
         scrollOnNextPath.current = true;
         window.history.replaceState(null, "", toDemoHref(path));
+        notifyDemoLocationChange();
       },
       pathname: location.pathname,
     }),
@@ -83,8 +91,10 @@ export function DemoApp() {
   return (
     <AppNavigationProvider value={navigation}>
       <DemoNoticeProvider>
-        <DemoRoutes location={location} />
-        <BottomNavigation />
+        <div id={hydrated ? undefined : DEMO_PRERENDER_ID} className="contents">
+          <DemoRoutes location={location} prerenderedHome={prerenderedHome} />
+          <BottomNavigation />
+        </div>
       </DemoNoticeProvider>
     </AppNavigationProvider>
   );
