@@ -29,7 +29,8 @@ const parseOptionalText = (value: unknown, maxLength: number): { ok: boolean; te
   return { ok: true, text: trimmed.length > 0 ? trimmed : null };
 };
 
-const parseExercises = (value: unknown): StrengthExercise[] | null => {
+// 루틴 입력 검증(routine-form.ts)도 같은 규칙을 쓴다. 빈 배열은 여기서 막지 않는다(러닝·기타 기록).
+export const parseExercises = (value: unknown): StrengthExercise[] | null => {
   if (!Array.isArray(value) || value.length > MAX_EXERCISES) return null;
 
   const exercises: StrengthExercise[] = [];

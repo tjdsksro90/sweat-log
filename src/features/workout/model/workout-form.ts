@@ -109,6 +109,20 @@ const toDurationFormValues = (totalSeconds: number | null): DurationFormValues =
 // 거리는 m 정수로 저장하니 km 소수 둘째 자리 밖의 값은 생기지 않는다. 끝의 0은 지운다(5.20 → 5.2).
 const toDistanceKm = (distanceMeters: number) => String(Number((distanceMeters / 1000).toFixed(2)));
 
+// 저장된 종목(기록 상세, 루틴)을 입력 칸 값으로 바꾼다. 불러올 때마다 새 key를 만들어 같은 구성을 두 번 붙여도 겹치지 않는다.
+export const toExerciseFormValues = (
+  exercises: { name: string; sets: { weightKg: number | null; reps: number }[] }[],
+): StrengthExerciseFormValues[] =>
+  exercises.map((exercise) => ({
+    key: createKey(),
+    name: exercise.name,
+    sets: exercise.sets.map((set) => ({
+      key: createKey(),
+      reps: String(set.reps),
+      weightKg: set.weightKg === null ? "" : String(set.weightKg),
+    })),
+  }));
+
 // 수정 화면의 초기값
 export const fromWorkoutDetail = (detail: WorkoutDetail): WorkoutFormValues => {
   const empty = createWorkoutFormValues(detail.workoutDate);
@@ -118,18 +132,7 @@ export const fromWorkoutDetail = (detail: WorkoutDetail): WorkoutFormValues => {
     companionIds: detail.companions.map((companion) => companion.id),
     crewId: detail.crew?.id ?? null,
     duration: toDurationFormValues(detail.durationSeconds),
-    exercises:
-      detail.exercises.length > 0
-        ? detail.exercises.map((exercise) => ({
-            key: createKey(),
-            name: exercise.name,
-            sets: exercise.sets.map((set) => ({
-              key: createKey(),
-              reps: String(set.reps),
-              weightKg: set.weightKg === null ? "" : String(set.weightKg),
-            })),
-          }))
-        : empty.exercises,
+    exercises: detail.exercises.length > 0 ? toExerciseFormValues(detail.exercises) : empty.exercises,
     id: detail.id,
     kind: detail.kind,
     memo: detail.memo ?? "",
@@ -144,31 +147,36 @@ export const fromWorkoutDetail = (detail: WorkoutDetail): WorkoutFormValues => {
   };
 };
 
-const updateExercise = (
-  values: WorkoutFormValues,
+/**
+ * 종목·세트 편집은 종목 목록만 바꾼다. 기록 작성 폼과 루틴 편집 폼이 함께 쓰도록 exercises를 가진 값이면 받는다.
+ */
+type WithExercises = { exercises: StrengthExerciseFormValues[] };
+
+const updateExercise = <T extends WithExercises>(
+  values: T,
   exerciseKey: string,
   update: (exercise: StrengthExerciseFormValues) => StrengthExerciseFormValues,
-): WorkoutFormValues => ({
+): T => ({
   ...values,
   exercises: values.exercises.map((exercise) => (exercise.key === exerciseKey ? update(exercise) : exercise)),
 });
 
-export const addExercise = (values: WorkoutFormValues): WorkoutFormValues => {
+export const addExercise = <T extends WithExercises>(values: T): T => {
   if (values.exercises.length >= MAX_EXERCISES) return values;
   return { ...values, exercises: [...values.exercises, createEmptyExercise()] };
 };
 
 // 마지막 종목을 지우면 빈 종목 하나를 남긴다. 헬스 기록에는 종목이 하나 이상 있어야 한다.
-export const removeExercise = (values: WorkoutFormValues, exerciseKey: string): WorkoutFormValues => {
+export const removeExercise = <T extends WithExercises>(values: T, exerciseKey: string): T => {
   const exercises = values.exercises.filter((exercise) => exercise.key !== exerciseKey);
   return { ...values, exercises: exercises.length > 0 ? exercises : [createEmptyExercise()] };
 };
 
-export const renameExercise = (values: WorkoutFormValues, exerciseKey: string, name: string) =>
+export const renameExercise = <T extends WithExercises>(values: T, exerciseKey: string, name: string) =>
   updateExercise(values, exerciseKey, (exercise) => ({ ...exercise, name }));
 
 // 보통 같은 무게·횟수로 세트를 이어 가니, 직전 세트 값을 복사해서 새 세트를 채운다.
-export const addSet = (values: WorkoutFormValues, exerciseKey: string) =>
+export const addSet = <T extends WithExercises>(values: T, exerciseKey: string) =>
   updateExercise(values, exerciseKey, (exercise) => {
     if (exercise.sets.length >= MAX_SETS_PER_EXERCISE) return exercise;
 
@@ -177,14 +185,14 @@ export const addSet = (values: WorkoutFormValues, exerciseKey: string) =>
     return { ...exercise, sets: [...exercise.sets, next] };
   });
 
-export const removeSet = (values: WorkoutFormValues, exerciseKey: string, setKey: string) =>
+export const removeSet = <T extends WithExercises>(values: T, exerciseKey: string, setKey: string) =>
   updateExercise(values, exerciseKey, (exercise) => {
     const sets = exercise.sets.filter((set) => set.key !== setKey);
     return { ...exercise, sets: sets.length > 0 ? sets : [createEmptySet()] };
   });
 
-export const updateSet = (
-  values: WorkoutFormValues,
+export const updateSet = <T extends WithExercises>(
+  values: T,
   exerciseKey: string,
   setKey: string,
   patch: Partial<Pick<StrengthSetFormValues, "reps" | "weightKg">>,
