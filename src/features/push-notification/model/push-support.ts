@@ -41,3 +41,14 @@ export const urlBase64ToUint8Array = (base64String: string) => {
   const raw = atob(base64);
   return Uint8Array.from(raw, (char) => char.charCodeAt(0));
 };
+
+/**
+ * 브라우저에 남은 구독이 지금 VAPID 공개 키로 만든 것인지 본다.
+ * 키를 바꾸면 옛 구독으로는 알림이 오지 않고(푸시 서비스 403), 같은 브라우저에서 새 키로 subscribe하면 InvalidStateError가 난다.
+ * 구독의 키를 알 수 없으면(오래된 브라우저) 판단하지 않고 그대로 쓴다.
+ */
+export const isCurrentServerKey = (subscriptionKey: ArrayBuffer | null | undefined, currentKey: Uint8Array) => {
+  if (!subscriptionKey || currentKey.length === 0) return true;
+  const bytes = new Uint8Array(subscriptionKey);
+  return bytes.length === currentKey.length && bytes.every((byte, index) => byte === currentKey[index]);
+};

@@ -1,4 +1,10 @@
-import { getPushAvailability, isIosDevice, type PushAvailability, urlBase64ToUint8Array } from "../model/push-support";
+import {
+  getPushAvailability,
+  isCurrentServerKey,
+  isIosDevice,
+  type PushAvailability,
+  urlBase64ToUint8Array,
+} from "../model/push-support";
 
 // 브라우저 PushSubscription에서 화면이 쓰는 부분. 테스트에서는 가짜로 바꿔 넣는다.
 export type BrowserSubscription = { endpoint: string; toJSON: () => unknown; unsubscribe: () => Promise<boolean> };
@@ -22,6 +28,22 @@ const getRegistration = async () => {
   ]);
 };
 
+const getServerKey = () => urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "");
+
+/**
+ * 지금 VAPID 키로 만든 구독만 돌려준다. 키를 바꾸기 전 구독은 알림이 오지 않고 새 구독도 막으므로 브라우저에서 끊는다.
+ * 서버에 남은 옛 행은 다음 발송 때 403 응답으로 지워진다.
+ */
+const getCurrentSubscription = async () => {
+  const registration = await navigator.serviceWorker.getRegistration("/");
+  const subscription = (await registration?.pushManager.getSubscription()) ?? null;
+  if (!subscription || isCurrentServerKey(subscription.options.applicationServerKey, getServerKey())) {
+    return subscription;
+  }
+  await subscription.unsubscribe().catch(() => false);
+  return null;
+};
+
 export const browserPush: PushBrowser = {
   getAvailability: () =>
     getPushAvailability({
@@ -39,16 +61,15 @@ export const browserPush: PushBrowser = {
         (navigator as Navigator & { standalone?: boolean }).standalone === true,
       permission: "Notification" in window ? Notification.permission : null,
     }),
-  getSubscription: async () => {
-    const registration = await navigator.serviceWorker.getRegistration("/");
-    return (await registration?.pushManager.getSubscription()) ?? null;
-  },
+  getSubscription: getCurrentSubscription,
   requestPermission: () => Notification.requestPermission(),
   subscribe: async () => {
     const registration = await getRegistration();
     if (!registration) throw new Error("service_worker_unavailable");
+    // 옛 키로 만든 구독이 남아 있으면 먼저 끊어야 새 키로 구독할 수 있다.
+    await getCurrentSubscription();
     return registration.pushManager.subscribe({
-      applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""),
+      applicationServerKey: getServerKey(),
       userVisibleOnly: true,
     });
   },

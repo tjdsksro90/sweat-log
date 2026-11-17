@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { getPushAvailability, isIosDevice, type PushEnvironment, urlBase64ToUint8Array } from "./push-support";
+import {
+  getPushAvailability,
+  isCurrentServerKey,
+  isIosDevice,
+  type PushEnvironment,
+  urlBase64ToUint8Array,
+} from "./push-support";
 
 const CHROME: PushEnvironment = {
   hasNotification: true,
@@ -59,5 +65,23 @@ describe("isIosDevice", () => {
 describe("urlBase64ToUint8Array", () => {
   it("base64url 문자열을 바이트로 바꾼다", () => {
     expect([...urlBase64ToUint8Array("AQID_-8")]).toEqual([1, 2, 3, 255, 239]);
+  });
+});
+
+describe("isCurrentServerKey", () => {
+  const current = Uint8Array.from([4, 1, 2, 3]);
+
+  it("같은 키로 만든 구독이면 그대로 쓴다", () => {
+    expect(isCurrentServerKey(Uint8Array.from([4, 1, 2, 3]).buffer, current)).toBe(true);
+  });
+
+  it("키를 바꾸기 전에 만든 구독은 다시 구독해야 한다", () => {
+    expect(isCurrentServerKey(Uint8Array.from([4, 9, 9, 9]).buffer, current)).toBe(false);
+    expect(isCurrentServerKey(Uint8Array.from([4, 1, 2]).buffer, current)).toBe(false);
+  });
+
+  it("구독의 키나 지금 키를 모르면 판단하지 않는다", () => {
+    expect(isCurrentServerKey(null, current)).toBe(true);
+    expect(isCurrentServerKey(Uint8Array.from([4, 1]).buffer, new Uint8Array())).toBe(true);
   });
 });
