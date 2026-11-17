@@ -5,7 +5,7 @@ import { useState } from "react";
 import { FileDashedIcon } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { Routine } from "@/entities/routine/model/routine";
+import { ROUTINE_LIMITS, type Routine } from "@/entities/routine/model/routine";
 import type { WorkoutDetail } from "@/entities/workout/model/contracts";
 import { isWorkoutKind } from "@/entities/workout/model/types";
 import { getKstToday } from "@/entities/workout/model/weekly-summary";
@@ -17,6 +17,7 @@ import { WorkoutCommentsView } from "@/features/workout-comment/ui/workout-comme
 import { CrewDetailScreen } from "@/pages/crew/detail/ui/crew-detail-screen";
 import { CrewListScreen } from "@/pages/crew/list/ui/crew-list-screen";
 import { HomeScreen } from "@/pages/home/ui/home-screen";
+import { RoutineLimitScreen } from "@/pages/routine/edit/ui/routine-limit-screen";
 import { RoutineListScreen } from "@/pages/routine/list/ui/routine-list-screen";
 import { SettingsScreen } from "@/pages/settings/ui/settings-screen";
 import { WorkoutDetailScreen } from "@/pages/workout/detail/ui/workout-detail-screen";
@@ -245,7 +246,9 @@ function DemoRoutineNew({ from }: { from: SearchParams[string] }) {
   const workout = useDemoQuery(["workout", workoutId], async () =>
     workoutId ? store.getWorkoutDetail(workoutId) : null,
   );
-  if (workout.isPending) return null;
+  const routines = useDemoQuery(["routines"], () => store.getRoutines());
+  if (workout.isPending || !routines.data) return null;
+  if (routines.data.length >= ROUTINE_LIMITS.perUser) return <RoutineLimitScreen />;
   const source =
     workout.data?.kind === "strength" ? { exercises: workout.data.exercises, name: workout.data.title ?? "" } : {};
   return <DemoRoutineForm title="새 루틴" initialValues={createRoutineFormValues(source)} />;

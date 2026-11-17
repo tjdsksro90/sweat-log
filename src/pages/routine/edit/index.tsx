@@ -1,11 +1,14 @@
 import { notFound } from "next/navigation";
 
-import { getRoutine } from "@/entities/routine/api/server-queries";
+import { countMyRoutines, getRoutine } from "@/entities/routine/api/server-queries";
+import { ROUTINE_LIMITS } from "@/entities/routine/model/routine";
 import { getWorkoutDetail } from "@/entities/workout/api/server-queries";
 import { deleteRoutine, saveRoutine } from "@/features/workout/api/routine-actions";
 import { createRoutineFormValues } from "@/features/workout/model/routine-form";
 import { isUuid } from "@/features/workout/model/save-workout-input";
 import { RoutineForm } from "@/widgets/workout-form";
+
+import { RoutineLimitScreen } from "./ui/routine-limit-screen";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -15,7 +18,12 @@ type SearchParams = Record<string, string | string[] | undefined>;
  */
 export async function NewRoutinePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { from } = await searchParams;
-  const workout = isUuid(from) ? await getWorkoutDetail(from) : null;
+  const [count, workout] = await Promise.all([
+    countMyRoutines(),
+    isUuid(from) ? getWorkoutDetail(from) : null,
+  ]);
+  if (count >= ROUTINE_LIMITS.perUser) return <RoutineLimitScreen />;
+
   const source = workout?.kind === "strength" ? { exercises: workout.exercises, name: workout.title ?? "" } : {};
 
   return <RoutineForm title="새 루틴" initialValues={createRoutineFormValues(source)} saveRoutine={saveRoutine} />;

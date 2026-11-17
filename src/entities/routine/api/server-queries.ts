@@ -37,6 +37,14 @@ export const getMyRoutinesForForm = async (): Promise<Routine[] | undefined> => 
   }
 };
 
+// 새 루틴 화면에 들어올 때 상한(30개)에 닿았는지 본다. 행은 읽지 않고 개수만 센다.
+export const countMyRoutines = async (): Promise<number> => {
+  const { supabase } = await requireUser();
+  const { count, error } = await supabase.from("workout_routines").select("id", { count: "exact", head: true });
+  if (error) throw error;
+  return count ?? 0;
+};
+
 // 남의 루틴이나 없는 id는 null. 둘을 구분하지 않는다.
 export const getRoutine = async (id: string): Promise<Routine | null> => {
   if (!UUID_PATTERN.test(id)) return null;
