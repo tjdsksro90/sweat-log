@@ -122,7 +122,7 @@ describe("toWorkoutDetail", () => {
     expect(toWorkoutDetail(row, JIEUN.id).companions).toEqual([JIEUN]);
   });
 
-  it("사진은 순서대로 서명 URL을 붙이고, URL을 못 만든 사진은 뺀다", () => {
+  it("사진은 순서대로 서명 URL을 붙이고, URL을 못 만든 사진은 url null로 남긴다", () => {
     const row = {
       ...strengthRow,
       photo_rows: [
@@ -135,8 +135,9 @@ describe("toWorkoutDetail", () => {
     expect(toWorkoutDetail(row, MINSU.id, { "u/w/1.jpg": "signed-1", "u/w/2.jpg": "signed-2" }).photos).toEqual([
       { id: "p1", url: "signed-1", width: 1600, height: 1200 },
       { id: "p2", url: "signed-2", width: 1200, height: 1600 },
+      { id: "p3", url: null, width: 800, height: 800 },
     ]);
-    expect(toWorkoutDetail(row, MINSU.id).photos).toEqual([]);
+    expect(toWorkoutDetail(row, MINSU.id).photos.map((photo) => photo.url)).toEqual([null, null, null]);
   });
 });
 

@@ -26,10 +26,11 @@ export type StrengthExercise = {
 };
 
 // 기록에 붙인 사진. url은 서버가 만든 서명 URL(비공개 버킷)이라 잠시 뒤 만료된다.
+// 서명을 만들지 못하면 null이다. 상세는 그 사진을 빼고 보여 주고, 수정 폼은 자리와 빼기 버튼을 남긴다.
 // width·height는 사진을 받기 전에 자리를 잡아 두는 데(CLS) 쓴다.
 export type WorkoutPhoto = {
   id: string;
-  url: string;
+  url: string | null;
   width: number;
   height: number;
 };
@@ -54,7 +55,7 @@ export type WorkoutListItem = {
 export type WorkoutDetail = Omit<WorkoutListItem, "strengthSummary"> & {
   memo: string | null;
   exercises: StrengthExercise[]; // 헬스가 아니면 빈 배열
-  photos: WorkoutPhoto[]; // 순서대로. 서명 URL을 만들지 못한 사진은 빠진다
+  photos: WorkoutPhoto[]; // 순서대로. 서명 URL을 만들지 못한 사진은 url이 null
   isMine: boolean;
   createdAt: string;
 };

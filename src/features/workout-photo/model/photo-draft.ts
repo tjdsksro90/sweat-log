@@ -5,7 +5,15 @@
 import type { WorkoutPhoto } from "@/entities/workout/model/contracts";
 import { MAX_WORKOUT_PHOTOS } from "@/entities/workout/model/photo";
 
-export type SavedDraftPhoto = { kind: "saved"; key: string; id: string; url: string; width: number; height: number };
+// url이 null이면 서명 URL을 만들지 못한 사진이다. 미리보기는 없어도 자리를 차지하고 뺄 수 있다.
+export type SavedDraftPhoto = {
+  kind: "saved";
+  key: string;
+  id: string;
+  url: string | null;
+  width: number;
+  height: number;
+};
 export type NewDraftPhoto = {
   kind: "new";
   key: string;

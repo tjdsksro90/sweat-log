@@ -2,7 +2,7 @@
 
 import { type ChangeEvent, useId, useRef, useState } from "react";
 
-import { ImageSquareIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
+import { ImageBrokenIcon, ImageSquareIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
 
 import { MAX_WORKOUT_PHOTOS } from "@/entities/workout/model/photo";
 import { Button } from "@/shared/ui/button";
@@ -96,13 +96,23 @@ export function PhotoPicker({
             const failed = item.kind === "new" && item.failed;
             return (
               <li key={item.key} className="relative aspect-square overflow-hidden rounded-md bg-muted">
-                <img
-                  src={item.url}
-                  alt={`고른 사진 ${index + 1}${failed ? " (올리지 못함)" : ""}`}
-                  width={item.width}
-                  height={item.height}
-                  className="size-full object-cover"
-                />
+                {item.url ? (
+                  <img
+                    src={item.url}
+                    alt={`고른 사진 ${index + 1}${failed ? " (올리지 못함)" : ""}`}
+                    width={item.width}
+                    height={item.height}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <div
+                    role="img"
+                    aria-label={`고른 사진 ${index + 1} (미리보기를 불러오지 못함)`}
+                    className="flex size-full items-center justify-center text-muted-foreground"
+                  >
+                    <ImageBrokenIcon size={24} aria-hidden="true" />
+                  </div>
+                )}
                 {failed && (
                   <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-background/85 py-0.5 text-caption text-foreground">
                     <WarningCircleIcon size={14} aria-hidden="true" />

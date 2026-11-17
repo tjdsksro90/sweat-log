@@ -157,14 +157,12 @@ export const toWorkoutListItem = (row: WorkoutListRow): WorkoutListItem => {
   };
 };
 
-// 사진 행을 순서대로 놓고 경로를 서명 URL로 바꾼다. URL이 없는 사진(서명 실패)은 깨진 그림 대신 뺀다.
+// 사진 행을 순서대로 놓고 경로를 서명 URL로 바꾼다. 서명하지 못한 사진도 행은 남긴다(url null).
+// 수정 폼이 4장 자리를 바르게 세고 그 사진을 뺄 수 있어야 해서다. 보여 줄 때 거르는 것은 화면 몫이다.
 export const toWorkoutPhotos = (rows: WorkoutPhotoRow[], signedUrls: Record<string, string>): WorkoutPhoto[] =>
   [...rows]
     .sort((a, b) => a.position - b.position)
-    .flatMap((row) => {
-      const url = signedUrls[row.path];
-      return url ? [{ id: row.id, url, width: row.width, height: row.height }] : [];
-    });
+    .map((row) => ({ id: row.id, url: signedUrls[row.path] ?? null, width: row.width, height: row.height }));
 
 export const toWorkoutDetail = (
   row: WorkoutDetailRow,

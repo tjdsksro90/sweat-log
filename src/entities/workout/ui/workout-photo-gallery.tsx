@@ -13,7 +13,9 @@ import { Button } from "@/shared/ui/button";
  * 칸 크기는 저장해 둔 가로·세로로 미리 잡아서 사진이 늦게 와도 아래 내용이 밀리지 않는다.
  * 디자인 시스템으로 옮길 후보: 이미지 라이트박스(shared/ui에 아직 없다).
  */
-export function WorkoutPhotoGallery({ photos, label }: { photos: WorkoutPhoto[]; label: string }) {
+export function WorkoutPhotoGallery({ photos: allPhotos, label }: { photos: WorkoutPhoto[]; label: string }) {
+  // 서명 URL을 만들지 못한 사진은 깨진 그림 대신 뺀다.
+  const photos = allPhotos.filter((photo): photo is WorkoutPhoto & { url: string } => photo.url !== null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const isOpen = openIndex !== null;

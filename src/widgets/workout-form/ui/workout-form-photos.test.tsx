@@ -206,6 +206,29 @@ describe("WorkoutForm 사진", () => {
     expect(photoActions.upload).toHaveBeenCalledTimes(1);
   });
 
+  it("서명 URL을 못 만든 사진도 자리를 차지하고 뺄 수 있다", async () => {
+    const photoActions = okActions();
+    const saved = (id: string, url: string | null): WorkoutPhoto => ({ id, url, width: 1600, height: 1200 });
+    const { user, goToFinish } = renderForm({
+      photoActions,
+      workoutId: "w1",
+      initialPhotos: [
+        saved("p1", "https://example.test/1.jpg"),
+        saved("p2", null),
+        saved("p3", "https://example.test/3.jpg"),
+        saved("p4", "https://example.test/4.jpg"),
+      ],
+    });
+    await goToFinish();
+
+    expect(screen.getByRole("img", { name: "고른 사진 2 (미리보기를 불러오지 못함)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "사진 4장을 모두 골랐어요" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "사진 2 빼기" }));
+    await user.click(screen.getByRole("button", { name: "기록 저장" }));
+    expect(photoActions.remove).toHaveBeenCalledWith("p2");
+  });
+
   it("사진을 올릴 수 없는 곳(체험)에서는 추가 버튼을 막고 안내한다", async () => {
     const { goToFinish } = renderForm({ photoUnavailableMessage: "체험에서는 사진을 올릴 수 없어요." });
     await goToFinish();
