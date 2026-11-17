@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { getMyRoutines } from "@/entities/routine/api/server-queries";
+import { getMyRoutinesForForm } from "@/entities/routine/api/server-queries";
 import { getWorkoutDetail } from "@/entities/workout/api/server-queries";
 import { deleteWorkout, saveWorkout } from "@/features/workout/api/workout-actions";
 import { fromWorkoutDetail, getTodayInSeoul } from "@/features/workout/model/workout-form";
@@ -14,7 +14,7 @@ export async function EditWorkoutPage({ workoutId }: { workoutId: string }) {
   const [detail, crews, routines] = await Promise.all([
     getWorkoutDetail(workoutId),
     getWorkoutFormCrews(user.id),
-    getMyRoutines(),
+    getMyRoutinesForForm(),
   ]);
 
   // 남의 기록은 볼 수는 있어도 고칠 수 없다. 수정 화면 자체를 없는 것으로 본다.

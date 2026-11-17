@@ -1,4 +1,4 @@
-import { getMyRoutines } from "@/entities/routine/api/server-queries";
+import { getMyRoutinesForForm } from "@/entities/routine/api/server-queries";
 import { isWorkoutKind } from "@/entities/workout/model/types";
 import { saveWorkout } from "@/features/workout/api/workout-actions";
 import { createWorkoutFormValues, getTodayInSeoul } from "@/features/workout/model/workout-form";
@@ -13,7 +13,7 @@ type SearchParams = Record<string, string | string[] | undefined>;
 export async function NewWorkoutPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { kind } = await searchParams;
   const { user } = await requireUser();
-  const [crews, routines] = await Promise.all([getWorkoutFormCrews(user.id), getMyRoutines()]);
+  const [crews, routines] = await Promise.all([getWorkoutFormCrews(user.id), getMyRoutinesForForm()]);
   const today = getTodayInSeoul();
 
   return (
