@@ -44,6 +44,7 @@ docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < su
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/save-workout.sql
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/workout-streak.sql
 docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/running-stats.sql
+docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/tests/strength-records.sql
 ```
 
 ## 기록 저장·목록 함수
@@ -54,4 +55,5 @@ docker exec -i supabase_db_sweat-log psql -U postgres -v ON_ERROR_STOP=1 -q < su
 - `get_running_monthly_distance(p_today date, p_months integer default 12)`: 최근 n개월(이번 달 포함, 1~24) 월별 러닝 거리·횟수. 빈 달도 0으로 준다.
 - `get_running_records(p_today date)`: 최고 페이스(1km 이상), 5km·10km 이상 최고 페이스, 최장 거리·시간. 해당 러닝이 없으면 그 행이 없다.
 - 러닝 통계 두 함수는 내가 작성했거나 함께한 친구로 들어간 러닝만 센다. 크루에 공유만 된 친구의 러닝은 넣지 않는다. 앱에서는 `getRunningStats`가 부르고, 체험은 같은 규칙의 `buildRunningStats`(`src/entities/workout/model/running-stats.ts`)로 집계한다.
+- `get_strength_records(p_today date, p_limit integer default 5)`: 내가 작성했거나 동행자로 포함된 헬스의 종목별 최고 무게·최초 달성 날짜·기록 ID·운동 횟수를 반환한다. 기준일 뒤의 기록과 크루 공유만 받은 기록은 제외한다. 이름의 공백을 모두 제거해 합치고, 서로 다른 운동 기록 수가 많은 순으로 최대 `p_limit`개(1~20)를 반환한다. 같은 무게는 날짜·작성 시각·ID 순으로 처음 기록을 택한다. 무게가 모두 비어 있으면 `max_weight_kg`는 null이고 날짜는 첫 맨몸 기록 날짜다. 실제 앱은 RPC로 집계하며, 데모만 `entities/exercise/model/build-strength-records.ts`의 같은 규칙을 사용한다.
 - 모두 `security invoker`라서 권한은 RLS가 판단한다. 기록 삭제는 함수 없이 `workouts`를 지우면 상세가 cascade로 지워진다.
