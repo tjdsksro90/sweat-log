@@ -9,19 +9,15 @@ import { Button } from "@/shared/ui/button";
 import { FieldDescription, FieldError, FieldLegend, FieldSet } from "@/shared/ui/field";
 
 import { compressPhoto } from "../lib/compress-photo";
-import {
-  addDraftPhotos,
-  getRemainingPhotoSlots,
-  type NewDraftPhoto,
-  type PhotoDraft,
-  removeDraftPhoto,
-} from "../model/photo-draft";
+import { getRemainingPhotoSlots, type NewDraftPhoto, type PhotoDraft } from "../model/photo-draft";
 
 type PhotoPickerProps = {
   draft: PhotoDraft;
-  onChange: (update: (draft: PhotoDraft) => PhotoDraft) => void;
-  trackObjectUrl: (url: string) => void;
-  releaseObjectUrl: (url: string) => void;
+  // 줄이는 중인지는 폼이 들고 있다. 폼은 그동안 저장을 막는다.
+  isPreparing: boolean;
+  onPreparingChange: (isPreparing: boolean) => void;
+  onAdd: (photos: NewDraftPhoto[]) => void;
+  onRemove: (key: string) => void;
   disabled?: boolean;
   // 체험 데모처럼 올릴 수 없는 곳에서 이유를 보여 준다. 있으면 추가 버튼을 막는다.
   unavailableMessage?: string;
@@ -33,15 +29,15 @@ type PhotoPickerProps = {
  */
 export function PhotoPicker({
   draft,
-  onChange,
-  trackObjectUrl,
-  releaseObjectUrl,
+  isPreparing,
+  onPreparingChange,
+  onAdd,
+  onRemove,
   disabled = false,
   unavailableMessage,
 }: PhotoPickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const descriptionId = useId();
-  const [isPreparing, setIsPreparing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const remaining = getRemainingPhotoSlots(draft);
   const hasFailed = draft.items.some((item) => item.kind === "new" && item.failed);
@@ -53,36 +49,38 @@ export function PhotoPicker({
     if (files.length === 0) return;
 
     setError(null);
-    setIsPreparing(true);
+    onPreparingChange(true);
     const picked: NewDraftPhoto[] = [];
     let lastError: string | null = null;
-    // 남은 자리보다 많이 고르면 앞에서부터 남은 만큼만 줄인다(큰 사진을 쓸데없이 디코딩하지 않는다).
-    for (const file of files.slice(0, remaining)) {
-      const result = await compressPhoto(file);
-      if ("error" in result) {
-        lastError = result.error;
-        continue;
+    try {
+      // 남은 자리보다 많이 고르면 앞에서부터 남은 만큼만 줄인다(큰 사진을 쓸데없이 디코딩하지 않는다).
+      for (const file of files.slice(0, remaining)) {
+        const result = await compressPhoto(file);
+        if ("error" in result) {
+          lastError = result.error;
+          continue;
+        }
+        picked.push({
+          kind: "new",
+          key: crypto.randomUUID(),
+          url: URL.createObjectURL(result.blob),
+          failed: false,
+          ...result,
+        });
       }
-      const url = URL.createObjectURL(result.blob);
-      trackObjectUrl(url);
-      picked.push({ kind: "new", key: crypto.randomUUID(), url, failed: false, ...result });
+    } finally {
+      onPreparingChange(false);
     }
-    setIsPreparing(false);
 
-    // 줄이는 동안 빼기 버튼을 막아 두므로 처음 받은 draft가 그대로 최신이다.
-    const { draft: next, rejected } = addDraftPhotos(draft, picked);
-    for (const photo of rejected) releaseObjectUrl(photo.url);
-    onChange(() => next);
-    if (files.length > remaining || rejected.length > 0)
-      lastError = `사진은 ${MAX_WORKOUT_PHOTOS}장까지 붙일 수 있어요.`;
+    // 폼이 최신 목록에 붙이고, 자리가 없어 붙지 못한 사진은 미리보기 URL까지 정리한다.
+    onAdd(picked);
+    if (files.length > remaining) lastError = `사진은 ${MAX_WORKOUT_PHOTOS}장까지 붙일 수 있어요.`;
     setError(lastError);
   };
 
   const handleRemove = (key: string) => {
     setError(null);
-    const target = draft.items.find((item) => item.key === key);
-    if (target?.kind === "new") releaseObjectUrl(target.url);
-    onChange((current) => removeDraftPhoto(current, key));
+    onRemove(key);
   };
 
   return (

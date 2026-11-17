@@ -153,8 +153,10 @@ export function WorkoutForm({
       showStepErrors();
       return;
     }
-    if (isLastStep) save();
-    else goToStep(stepIndex + 1);
+    // 사진을 줄이는 중에 저장하면 그 사진이 빠진 채 저장된다.
+    if (isLastStep) {
+      if (!photos.isPreparing) save();
+    } else goToStep(stepIndex + 1);
   };
 
   const handleDelete = () => {
@@ -238,12 +240,16 @@ export function WorkoutForm({
           {step === "finish" && showPhotos && (
             <PhotoPicker
               draft={photos.draft}
-              onChange={(change) => {
+              isPreparing={photos.isPreparing}
+              onPreparingChange={photos.setIsPreparing}
+              onAdd={(picked) => {
                 setServerError(null);
-                photos.setDraft(change);
+                photos.addPhotos(picked);
               }}
-              trackObjectUrl={photos.trackObjectUrl}
-              releaseObjectUrl={photos.releaseObjectUrl}
+              onRemove={(key) => {
+                setServerError(null);
+                photos.removePhoto(key);
+              }}
               disabled={isSaving}
               unavailableMessage={photoActions ? undefined : photoUnavailableMessage}
             />
@@ -256,7 +262,7 @@ export function WorkoutForm({
             <Button
               variant="link"
               className="self-start"
-              disabled={isSaving}
+              disabled={isSaving || photos.isPreparing}
               onClick={() => {
                 guard.allowLeave();
                 router.replace(`/workouts/${savedWithPhotoError}`);
@@ -277,8 +283,14 @@ export function WorkoutForm({
                 이전
               </Button>
             )}
-            <Button type="submit" variant="primary" size="lg" className="flex-[2]" disabled={isSaving}>
-              {isLastStep ? (isSaving ? "저장 중…" : "기록 저장") : "다음"}
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              className="flex-[2]"
+              disabled={isSaving || (isLastStep && photos.isPreparing)}
+            >
+              {isLastStep ? (isSaving ? "저장 중…" : photos.isPreparing ? "사진 줄이는 중…" : "기록 저장") : "다음"}
             </Button>
           </div>
         </div>
