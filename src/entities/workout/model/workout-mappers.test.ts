@@ -33,6 +33,7 @@ const runRow: WorkoutListRow = {
   run: { distance_meters: 7200, duration_seconds: 2430 },
   sets: [],
   comments: [{ count: 2 }],
+  photos: [{ count: 2 }],
 };
 
 // DB는 순서를 보장하지 않으므로 일부러 섞어 둔다.
@@ -119,6 +120,23 @@ describe("toWorkoutDetail", () => {
       { id: HIDDEN_COMPANION.user_id, nickname: "알 수 없음" },
     ]);
     expect(toWorkoutDetail(row, JIEUN.id).companions).toEqual([JIEUN]);
+  });
+
+  it("사진은 순서대로 서명 URL을 붙이고, URL을 못 만든 사진은 뺀다", () => {
+    const row = {
+      ...strengthRow,
+      photo_rows: [
+        { id: "p2", path: "u/w/2.jpg", position: 3, width: 1200, height: 1600 },
+        { id: "p1", path: "u/w/1.jpg", position: 0, width: 1600, height: 1200 },
+        { id: "p3", path: "u/w/3.jpg", position: 5, width: 800, height: 800 },
+      ],
+    };
+
+    expect(toWorkoutDetail(row, MINSU.id, { "u/w/1.jpg": "signed-1", "u/w/2.jpg": "signed-2" }).photos).toEqual([
+      { id: "p1", url: "signed-1", width: 1600, height: 1200 },
+      { id: "p2", url: "signed-2", width: 1200, height: 1600 },
+    ]);
+    expect(toWorkoutDetail(row, MINSU.id).photos).toEqual([]);
   });
 });
 

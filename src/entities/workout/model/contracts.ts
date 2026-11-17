@@ -25,6 +25,15 @@ export type StrengthExercise = {
   sets: StrengthSet[];
 };
 
+// 기록에 붙인 사진. url은 서버가 만든 서명 URL(비공개 버킷)이라 잠시 뒤 만료된다.
+// width·height는 사진을 받기 전에 자리를 잡아 두는 데(CLS) 쓴다.
+export type WorkoutPhoto = {
+  id: string;
+  url: string;
+  width: number;
+  height: number;
+};
+
 // 목록·달력·피드 카드 한 장에 필요한 만큼만
 export type WorkoutListItem = {
   id: string;
@@ -39,11 +48,13 @@ export type WorkoutListItem = {
   strengthSummary: { exerciseCount: number; setCount: number; totalVolumeKg: number } | null; // kind === "strength"일 때만
   durationSeconds: number | null;
   commentCount: number;
+  photoCount: number;
 };
 
 export type WorkoutDetail = Omit<WorkoutListItem, "strengthSummary"> & {
   memo: string | null;
   exercises: StrengthExercise[]; // 헬스가 아니면 빈 배열
+  photos: WorkoutPhoto[]; // 순서대로. 서명 URL을 만들지 못한 사진은 빠진다
   isMine: boolean;
   createdAt: string;
 };

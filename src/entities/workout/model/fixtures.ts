@@ -23,6 +23,7 @@ export const SAMPLE_WORKOUTS: WorkoutListItem[] = [
     strengthSummary: null,
     durationSeconds: null,
     commentCount: 2,
+    photoCount: 2,
   },
   {
     id: "00000000-0000-0000-0000-000000000102",
@@ -37,6 +38,7 @@ export const SAMPLE_WORKOUTS: WorkoutListItem[] = [
     strengthSummary: { exerciseCount: 2, setCount: 6, totalVolumeKg: 3720 },
     durationSeconds: 3900,
     commentCount: 0,
+    photoCount: 0,
   },
   {
     id: "00000000-0000-0000-0000-000000000103",
@@ -51,6 +53,7 @@ export const SAMPLE_WORKOUTS: WorkoutListItem[] = [
     strengthSummary: null,
     durationSeconds: 10800,
     commentCount: 1,
+    photoCount: 0,
   },
 ];
 
@@ -75,6 +78,7 @@ export const SAMPLE_STRENGTH_DETAIL: WorkoutDetail = {
       ],
     },
   ],
+  photos: [],
   isMine: true,
   createdAt: "2026-11-13T12:30:00.000Z",
 };

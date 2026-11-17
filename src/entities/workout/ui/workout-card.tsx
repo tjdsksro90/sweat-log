@@ -36,6 +36,7 @@ export function WorkoutCard({ workout }: { workout: WorkoutListItem }) {
           )}
           <p>{workout.crew ? `공유 크루 · ${workout.crew.name}` : "공유 크루 없음"}</p>
           <p>댓글 {workout.commentCount}개</p>
+          {workout.photoCount > 0 && <p>사진 {workout.photoCount}장</p>}
         </div>
       </CardContent>
     </Card>
