@@ -1,5 +1,6 @@
 import type { CrewDetail, CrewSummary } from "@/entities/crew/model/crew";
 import { buildStrengthRecords } from "@/entities/exercise/model/build-strength-records";
+import type { RoutineExercise } from "@/entities/routine/model/routine";
 import { ROUTINE_LIMITS, type Routine, type RoutineInput } from "@/entities/routine/model/routine";
 import type {
   WeeklySummary,
@@ -24,7 +25,11 @@ import {
 } from "@/entities/workout/model/workout-mappers";
 import type { DeleteRoutineResult, SaveRoutineResult } from "@/features/workout/api/routine-actions";
 import type { DeleteWorkoutResult, SaveWorkoutResult } from "@/features/workout/api/workout-actions";
-import { getRoutineErrorMessage, parseRoutineInput } from "@/features/workout/model/routine-form";
+import {
+  getRoutineErrorMessage,
+  parseRoutineExercisesUpdate,
+  parseRoutineInput,
+} from "@/features/workout/model/routine-form";
 import { getWorkoutErrorMessage, isUuid, parseWorkoutInput } from "@/features/workout/model/save-workout-input";
 import type { WorkoutComment } from "@/features/workout-comment/model/comment";
 import { type CommentFormState, validateCommentBody } from "@/features/workout-comment/model/comment-form";
@@ -425,6 +430,18 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
     persist();
     return { ok: true };
   };
+  // 기록 작성 폼의 루틴 갱신. 실제 앱(updateRoutineExercises)처럼 이름은 두고 구성만 바꾼다.
+  const updateRoutineExercises = async (id: string, exercises: RoutineExercise[]): Promise<SaveRoutineResult> => {
+    const parsed = parseRoutineExercisesUpdate(id, exercises);
+    if (!parsed.ok) return parsed;
+    const data = read();
+    const previous = data.routines.find((routine) => routine.id === parsed.id);
+    if (!previous) return { ok: false, error: getRoutineErrorMessage({ message: "routine_not_found" }) };
+    const routine: Routine = { ...previous, exercises: parsed.exercises, updatedAt: now().toISOString() };
+    data.routines = [...data.routines.filter((item) => item.id !== routine.id), routine];
+    persist();
+    return { ok: true, id: routine.id };
+  };
   // 최근 기록 불러오기. 실제 앱처럼 오늘 포함 7일 안의 내가 쓴 헬스 기록만, 최근 것부터.
   const getRecentStrengthWorkouts = async ({
     today = getKstToday(now()),
@@ -480,6 +497,7 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
     getRoutine,
     saveRoutine,
     deleteRoutine,
+    updateRoutineExercises,
     getRecentStrengthWorkouts,
     reset,
   };
@@ -522,6 +540,7 @@ export const getRoutines = browserOnly(sharedStore.getRoutines);
 export const getRoutine = browserOnly(sharedStore.getRoutine);
 export const saveRoutine = browserOnly(sharedStore.saveRoutine);
 export const deleteRoutine = browserOnly(sharedStore.deleteRoutine);
+export const updateRoutineExercises = browserOnly(sharedStore.updateRoutineExercises);
 export const getRecentStrengthWorkouts = browserOnly(sharedStore.getRecentStrengthWorkouts);
 export const reset = (): void => {
   assertBrowser();

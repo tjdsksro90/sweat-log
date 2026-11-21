@@ -5,6 +5,7 @@ import { addDays, getKstToday } from "@/entities/workout/model/weekly-summary";
 import { createDemoStore } from "./store";
 
 const NOW = new Date("2026-11-16T00:00:00Z");
+const LATER = new Date("2026-11-17T00:00:00Z");
 const TODAY = getKstToday(NOW);
 const mine = (day: number) => `30000000-0000-4000-8000-${String(day + 1).padStart(12, "0")}`;
 
@@ -43,5 +44,35 @@ describe("체험 최근 헬스 기록 불러오기", () => {
     const store = createDemoStore({ now: () => NOW, storage: () => null });
     const recent = await store.getRecentStrengthWorkouts({ excludeId: mine(1) });
     expect(recent.map((workout) => workout.id)).toEqual([mine(4)]);
+  });
+});
+
+describe("체험 루틴 갱신", () => {
+  it("이름은 두고 구성만 바꾼다", async () => {
+    let now = NOW;
+    const store = createDemoStore({ now: () => now, storage: () => null });
+    const [routine] = await store.getRoutines();
+    now = LATER;
+
+    const exercises = [{ name: "스쿼트", sets: [{ reps: 8, weightKg: 65 }] }];
+    expect(await store.updateRoutineExercises(routine.id, exercises)).toEqual({ ok: true, id: routine.id });
+    expect(await store.getRoutine(routine.id)).toEqual({
+      ...routine,
+      exercises,
+      updatedAt: LATER.toISOString(),
+    });
+  });
+
+  it("지운 루틴이나 잘못된 구성은 실패로 알린다", async () => {
+    const store = createDemoStore({ now: () => NOW, storage: () => null });
+    const [routine] = await store.getRoutines();
+    await store.deleteRoutine(routine.id);
+
+    const result = await store.updateRoutineExercises(routine.id, [
+      { name: "스쿼트", sets: [{ reps: 8, weightKg: 65 }] },
+    ]);
+    expect(result).toEqual({ ok: false, error: "루틴을 찾지 못했어요. 이미 지웠는지 확인해 주세요." });
+    const [other] = await store.getRoutines();
+    expect((await store.updateRoutineExercises(other.id, [])).ok).toBe(false);
   });
 });

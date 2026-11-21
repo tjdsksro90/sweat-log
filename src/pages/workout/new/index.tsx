@@ -1,6 +1,7 @@
 import { getMyRoutinesForForm } from "@/entities/routine/api/server-queries";
 import { getRecentStrengthWorkoutsForForm } from "@/entities/workout/api/server-queries";
 import { isWorkoutKind } from "@/entities/workout/model/types";
+import { updateRoutineExercises } from "@/features/workout/api/routine-actions";
 import { saveWorkout } from "@/features/workout/api/workout-actions";
 import { createWorkoutFormValues, getTodayInSeoul } from "@/features/workout/model/workout-form";
 import { deleteWorkoutPhoto, uploadWorkoutPhoto } from "@/features/workout-photo/api/photo-actions";
@@ -32,6 +33,7 @@ export async function NewWorkoutPage({ searchParams }: { searchParams: Promise<S
       photoActions={{ upload: uploadWorkoutPhoto, remove: deleteWorkoutPhoto }}
       routines={routines}
       recentWorkouts={recentWorkouts}
+      updateRoutine={updateRoutineExercises}
     />
   );
 }

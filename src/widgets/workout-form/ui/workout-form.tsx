@@ -5,7 +5,7 @@ import { type FormEvent, useEffect, useRef, useState, useTransition } from "reac
 import { TrashIcon, XIcon } from "@phosphor-icons/react";
 
 import type { Routine } from "@/entities/routine/model/routine";
-import type { WorkoutPhoto } from "@/entities/workout/model/contracts";
+import type { StrengthExercise, WorkoutPhoto } from "@/entities/workout/model/contracts";
 import type { RecentStrengthWorkout } from "@/entities/workout/model/recent-strength";
 import {
   isWorkoutFormDirty,
@@ -21,12 +21,20 @@ import { useAppRouter } from "@/shared/lib/app-navigation";
 import { Button } from "@/shared/ui/button";
 import { FieldError } from "@/shared/ui/field";
 
-import type { DeleteWorkoutAction, SaveWorkoutAction, WorkoutFormCrew, WorkoutFormMember } from "../model/types";
+import type {
+  DeleteWorkoutAction,
+  SaveWorkoutAction,
+  UpdateRoutineExercisesAction,
+  WorkoutFormCrew,
+  WorkoutFormMember,
+} from "../model/types";
 import { useLeaveGuard } from "../model/use-leave-guard";
 import { BasicsStep } from "./basics-step";
 import { ConfirmSheet } from "./confirm-sheet";
 import { DetailStep } from "./detail-step";
 import { FinishStep } from "./finish-step";
+import { RoutineUpdateSheet } from "./routine-update-sheet";
+import type { ExerciseLoadSource } from "./strength-detail";
 
 type WorkoutFormProps = {
   title: string;
@@ -42,6 +50,14 @@ type WorkoutFormProps = {
   photoUnavailableMessage?: string; // 체험 데모처럼 사진을 막을 때 고르기 자리에 보여 줄 안내
   routines?: Routine[]; // 헬스 상세에서 불러올 내 루틴. 없으면 불러오기를 보여 주지 않는다
   recentWorkouts?: RecentStrengthWorkout[]; // 최근 7일 내 헬스 기록. 없으면 최근 기록 불러오기를 보여 주지 않는다
+  updateRoutine?: UpdateRoutineExercisesAction; // 없으면 루틴을 불러와 저장해도 갱신을 묻지 않는다
+};
+
+// 저장 뒤 루틴 갱신을 묻는 동안 들고 있는 값. nextHref가 null이면(사진 일부 실패) 폼에 머문다.
+type RoutinePrompt = {
+  routine: { id: string; name: string };
+  exercises: StrengthExercise[];
+  nextHref: string | null;
 };
 
 /**
@@ -62,6 +78,7 @@ export function WorkoutForm({
   photoUnavailableMessage,
   routines,
   recentWorkouts,
+  updateRoutine,
 }: WorkoutFormProps) {
   const router = useAppRouter();
   const [values, setValues] = useState(initialValues);
@@ -76,6 +93,14 @@ export function WorkoutForm({
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, startDeleting] = useTransition();
   const bodyRef = useRef<HTMLDivElement>(null);
+  /**
+   * 이 폼에서 마지막으로 불러온 루틴. 기록에는 저장하지 않고 폼 상태로만 기억한다.
+   * 최근 기록을 불러오면 루틴을 불러온 게 아니므로 지운다. 저장 뒤 한 번 묻고 나면 지운다.
+   */
+  const [loadedRoutine, setLoadedRoutine] = useState<{ id: string; name: string } | null>(null);
+  const [routinePrompt, setRoutinePrompt] = useState<RoutinePrompt | null>(null);
+  const [routineUpdateError, setRoutineUpdateError] = useState<string | null>(null);
+  const [isUpdatingRoutine, startUpdatingRoutine] = useTransition();
 
   const step = WORKOUT_FORM_STEPS[stepIndex];
   const isLastStep = stepIndex === WORKOUT_FORM_STEPS.length - 1;
@@ -114,6 +139,37 @@ export function WorkoutForm({
     window.scrollTo({ top: 0 });
   };
 
+  const handleSourceLoaded = (source: ExerciseLoadSource) =>
+    setLoadedRoutine(source.kind === "routine" ? { id: source.routine.id, name: source.routine.name } : null);
+
+  const finishRoutinePrompt = () => {
+    const nextHref = routinePrompt?.nextHref ?? null;
+    setRoutinePrompt(null);
+    setRoutineUpdateError(null);
+    if (nextHref) {
+      guard.allowLeave();
+      router.replace(nextHref);
+    }
+  };
+
+  const confirmRoutineUpdate = () => {
+    if (!routinePrompt || !updateRoutine) return;
+    const { routine, exercises } = routinePrompt;
+    startUpdatingRoutine(async () => {
+      try {
+        const updated = await updateRoutine(routine.id, exercises);
+        if (!updated.ok) {
+          setRoutineUpdateError(updated.error);
+          return;
+        }
+      } catch {
+        setRoutineUpdateError("루틴을 업데이트하지 못했어요.");
+        return;
+      }
+      finishRoutinePrompt();
+    });
+  };
+
   const save = () => {
     const result = toWorkoutInput(values, today);
     if (!result.ok) {
@@ -129,6 +185,13 @@ export function WorkoutForm({
         return;
       }
 
+      // 루틴을 불러와 헬스로 저장했으면 바뀌었는지 비교하지 않고 묻는다. 거절해도 기록은 그대로다.
+      const prompt =
+        updateRoutine && loadedRoutine && result.input.kind === "strength" && result.input.exercises.length > 0
+          ? { exercises: result.input.exercises, routine: loadedRoutine }
+          : null;
+      if (prompt) setLoadedRoutine(null);
+
       /**
        * 사진은 기록을 저장한 뒤에 반영한다(새 기록은 그때 id가 생긴다). 사진이 실패해도 기록은 되돌리지 않는다.
        * 폼을 수정 상태(id 있음)로 바꾸고 실패한 사진만 남겨 두어, 다시 저장하면 기록을 갱신하고 남은 사진만 다시 시도한다.
@@ -142,10 +205,15 @@ export function WorkoutForm({
           setServerError(
             `기록은 저장했어요. 사진 ${synced.failedCount}장은 반영하지 못했어요.${synced.firstError ? ` ${synced.firstError}` : ""} 다시 저장하면 남은 사진만 다시 시도해요.`,
           );
+          if (prompt) setRoutinePrompt({ ...prompt, nextHref: null });
           return;
         }
       }
 
+      if (prompt) {
+        setRoutinePrompt({ ...prompt, nextHref: `/workouts/${saved.id}` });
+        return;
+      }
       guard.allowLeave();
       router.replace(`/workouts/${saved.id}`);
     });
@@ -240,6 +308,7 @@ export function WorkoutForm({
               onChange={update}
               routines={routines}
               recentWorkouts={recentWorkouts}
+              onSourceLoaded={handleSourceLoaded}
             />
           )}
           {step === "finish" && (
@@ -320,6 +389,16 @@ export function WorkoutForm({
         onConfirm={guard.confirmLeave}
         onCancel={guard.cancelLeave}
       />
+      {routinePrompt && (
+        <RoutineUpdateSheet
+          open
+          routineName={routinePrompt.routine.name}
+          isPending={isUpdatingRoutine}
+          error={routineUpdateError}
+          onConfirm={confirmRoutineUpdate}
+          onSkip={finishRoutinePrompt}
+        />
+      )}
       {deleteWorkout && (
         <ConfirmSheet
           open={isDeleteOpen}

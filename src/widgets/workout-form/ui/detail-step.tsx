@@ -5,7 +5,7 @@ import type { WorkoutFormErrors } from "@/features/workout/model/workout-input";
 
 import { DurationFields } from "./duration-fields";
 import { RunDetail } from "./run-detail";
-import { StrengthDetail } from "./strength-detail";
+import { type ExerciseLoadSource, StrengthDetail } from "./strength-detail";
 
 // 2단계: 종류별 상세
 export function DetailStep({
@@ -14,12 +14,14 @@ export function DetailStep({
   onChange,
   routines,
   recentWorkouts,
+  onSourceLoaded,
 }: {
   values: WorkoutFormValues;
   errors: WorkoutFormErrors;
   onChange: (update: (values: WorkoutFormValues) => WorkoutFormValues) => void;
   routines?: Routine[];
   recentWorkouts?: RecentStrengthWorkout[];
+  onSourceLoaded?: (source: ExerciseLoadSource) => void;
 }) {
   if (values.kind === "run") {
     return (
@@ -38,6 +40,7 @@ export function DetailStep({
           onChange={(change) => onChange((current) => ({ ...current, exercises: change(current.exercises) }))}
           routines={routines}
           recentWorkouts={recentWorkouts}
+          onSourceLoaded={onSourceLoaded}
         />
       )}
       <DurationFields

@@ -169,6 +169,9 @@ function ExerciseCard({
   );
 }
 
+// 불러오기로 무엇을 채웠는지. 기록 작성 폼이 루틴 갱신 질문을 할지 정하는 데 쓴다.
+export type ExerciseLoadSource = { kind: "routine"; routine: Routine } | { kind: "recent" };
+
 /**
  * 무게를 비우면 맨몸 운동. 새 세트는 직전 세트 값을 복사한다(addSet).
  * routines·recentWorkouts를 넘기면(기록 작성 폼) 불러오기를 보여 준다. 루틴 편집 폼은 넘기지 않는다.
@@ -179,12 +182,14 @@ export function StrengthDetail({
   onChange,
   routines,
   recentWorkouts,
+  onSourceLoaded,
 }: {
   exercises: Exercises;
   errors: WorkoutFormErrors;
   onChange: (update: (exercises: Exercises) => Exercises) => void;
   routines?: Routine[];
   recentWorkouts?: RecentStrengthWorkout[];
+  onSourceLoaded?: (source: ExerciseLoadSource) => void;
 }) {
   const update: Update = (change) => onChange((current) => change({ exercises: current }).exercises);
   const [loadedMessage, setLoadedMessage] = useState("");
@@ -204,6 +209,7 @@ export function StrengthDetail({
                 onLoad={(change, routine) => {
                   onChange(change);
                   setLoadedMessage(`‘${routine.name}’ 루틴을 불러왔어요. 무게와 횟수는 바로 고칠 수 있어요.`);
+                  onSourceLoaded?.({ kind: "routine", routine });
                 }}
               />
             )}
@@ -215,6 +221,7 @@ export function StrengthDetail({
                 onLoad={(change) => {
                   onChange(change);
                   setLoadedMessage("최근 기록을 불러왔어요. 무게와 횟수는 바로 고칠 수 있어요.");
+                  onSourceLoaded?.({ kind: "recent" });
                 }}
               />
             )}

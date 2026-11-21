@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { getMyRoutinesForForm } from "@/entities/routine/api/server-queries";
 import { getRecentStrengthWorkoutsForForm, getWorkoutDetail } from "@/entities/workout/api/server-queries";
+import { updateRoutineExercises } from "@/features/workout/api/routine-actions";
 import { deleteWorkout, saveWorkout } from "@/features/workout/api/workout-actions";
 import { fromWorkoutDetail, getTodayInSeoul } from "@/features/workout/model/workout-form";
 import { deleteWorkoutPhoto, uploadWorkoutPhoto } from "@/features/workout-photo/api/photo-actions";
@@ -40,6 +41,7 @@ export async function EditWorkoutPage({ workoutId }: { workoutId: string }) {
       photoActions={{ upload: uploadWorkoutPhoto, remove: deleteWorkoutPhoto }}
       routines={routines}
       recentWorkouts={recentWorkouts}
+      updateRoutine={updateRoutineExercises}
     />
   );
 }

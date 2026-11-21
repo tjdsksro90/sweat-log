@@ -1,4 +1,4 @@
-import type { RoutineInput } from "@/entities/routine/model/routine";
+import type { RoutineExercise, RoutineInput } from "@/entities/routine/model/routine";
 import type { WorkoutInput } from "@/entities/workout/model/contracts";
 import type { DeleteRoutineResult, SaveRoutineResult } from "@/features/workout/api/routine-actions";
 import type { DeleteWorkoutResult, SaveWorkoutResult } from "@/features/workout/api/workout-actions";
@@ -17,3 +17,4 @@ export type SaveWorkoutAction = (input: WorkoutInput) => Promise<SaveWorkoutResu
 export type DeleteWorkoutAction = (id: string) => Promise<DeleteWorkoutResult>;
 export type SaveRoutineAction = (input: RoutineInput) => Promise<SaveRoutineResult>;
 export type DeleteRoutineAction = (id: string) => Promise<DeleteRoutineResult>;
+export type UpdateRoutineExercisesAction = (id: string, exercises: RoutineExercise[]) => Promise<SaveRoutineResult>;

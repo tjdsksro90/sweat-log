@@ -217,6 +217,7 @@ function DemoWorkoutForm({
   const [actions] = useState(() => ({
     save: refreshAfter(store.saveWorkout, false),
     remove: refreshAfter(store.deleteWorkout, false),
+    updateRoutine: refreshAfter(store.updateRoutineExercises, false),
   }));
   return (
     <WorkoutForm
@@ -234,6 +235,7 @@ function DemoWorkoutForm({
       photoUnavailableMessage={DEMO_PHOTO_MESSAGE}
       routines={routines}
       recentWorkouts={recentWorkouts}
+      updateRoutine={actions.updateRoutine}
     />
   );
 }
