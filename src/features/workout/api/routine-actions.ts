@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
-import { type RoutineInput, toRoutineExercisesJson } from "@/entities/routine/model/routine";
+import { type RoutineExercise, type RoutineInput, toRoutineExercisesJson } from "@/entities/routine/model/routine";
 import { requireUser } from "@/shared/api/supabase/require-user";
 
-import { getRoutineErrorMessage, parseRoutineInput } from "../model/routine-form";
+import { getRoutineErrorMessage, parseRoutineExercisesUpdate, parseRoutineInput } from "../model/routine-form";
 import { isUuid } from "../model/save-workout-input";
 
 export type SaveRoutineResult = { ok: true; id: string } | { ok: false; error: string };
@@ -41,6 +41,28 @@ export const saveRoutine = async (input: RoutineInput): Promise<SaveRoutineResul
 
   revalidateRoutinePaths();
   return { id, ok: true };
+};
+
+/**
+ * 루틴으로 운동한 뒤 "이 내용으로 업데이트할까요?"에 동의했을 때. 이름은 두고 구성(exercises)만 바꾼다.
+ * 그사이 다른 화면에서 이름을 고쳤어도 덮어쓰지 않는다. update 권한도 (name, exercises) 안이다.
+ */
+export const updateRoutineExercises = async (id: string, exercises: RoutineExercise[]): Promise<SaveRoutineResult> => {
+  const { supabase } = await requireUser();
+
+  const parsed = parseRoutineExercisesUpdate(id, exercises);
+  if (!parsed.ok) return parsed;
+
+  const { data, error } = await supabase
+    .from("workout_routines")
+    .update({ exercises: toRoutineExercisesJson(parsed.exercises) })
+    .eq("id", parsed.id)
+    .select("id");
+  if (error) return { error: getRoutineErrorMessage(error), ok: false };
+  if (data.length === 0) return { error: getRoutineErrorMessage({ message: "routine_not_found" }), ok: false };
+
+  revalidateRoutinePaths();
+  return { id: parsed.id, ok: true };
 };
 
 export const deleteRoutine = async (id: string): Promise<DeleteRoutineResult> => {

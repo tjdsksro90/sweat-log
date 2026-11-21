@@ -103,6 +103,18 @@ export const parseRoutineInput = (value: unknown): ParseRoutineInputResult => {
   return { input: { ...(id !== undefined ? { id } : {}), exercises: parsed, name: trimmed }, ok: true };
 };
 
+export type ParseRoutineExercisesUpdateResult =
+  | { ok: true; id: string; exercises: RoutineExercise[] }
+  | { ok: false; error: string };
+
+// 기록에서 루틴 구성만 갱신할 때. 기록과 루틴은 종목(20)·세트(30) 상한과 값 범위가 같아 그대로 옮길 수 있다.
+export const parseRoutineExercisesUpdate = (id: unknown, exercises: unknown): ParseRoutineExercisesUpdateResult => {
+  if (!isUuid(id)) return { error: getRoutineErrorMessage({ message: "routine_not_found" }), ok: false };
+  const parsed = parseExercises(exercises);
+  if (parsed === null || parsed.length === 0) return { error: INVALID_INPUT, ok: false };
+  return { exercises: parsed, id, ok: true };
+};
+
 type RoutineError = { message: string; code?: string } | null | undefined;
 
 // 23514(check 제약 위반)는 길이·범위 초과, too_many_routines는 개수 상한 트리거.

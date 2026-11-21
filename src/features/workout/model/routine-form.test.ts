@@ -8,6 +8,7 @@ import {
   getRoutineErrorMessage,
   hasEnteredExercises,
   loadRoutineExercises,
+  parseRoutineExercisesUpdate,
   parseRoutineInput,
   toRoutineInput,
   validateRoutineForm,
@@ -235,5 +236,39 @@ describe("오류 문구", () => {
       "입력한 값을 다시 확인해 주세요.",
     );
     expect(getRoutineErrorMessage({ message: "routine_not_found" })).toContain("찾지 못했어요");
+  });
+});
+
+describe("기록에서 루틴 구성 갱신 입력 확인", () => {
+  const ID = "00000000-0000-4000-8000-000000000001";
+  const SET = { reps: 10, weightKg: 60 };
+  const exercise = (name: string, setCount = 1) => ({ name, sets: Array.from({ length: setCount }, () => SET) });
+
+  it("uuid와 구성이 맞으면 그대로 돌려준다", () => {
+    expect(parseRoutineExercisesUpdate(ID, [exercise("스쿼트")])).toEqual({
+      exercises: [exercise("스쿼트")],
+      id: ID,
+      ok: true,
+    });
+  });
+
+  it("잘못된 uuid는 루틴을 찾지 못한 것으로 본다", () => {
+    expect(parseRoutineExercisesUpdate("abc", [exercise("스쿼트")])).toEqual({
+      error: "루틴을 찾지 못했어요. 이미 지웠는지 확인해 주세요.",
+      ok: false,
+    });
+  });
+
+  it("빈 구성, 종목 21개, 세트 31개는 받지 않는다", () => {
+    expect(parseRoutineExercisesUpdate(ID, []).ok).toBe(false);
+    expect(
+      parseRoutineExercisesUpdate(
+        ID,
+        Array.from({ length: MAX_EXERCISES + 1 }, (_, index) => exercise(`종목${index}`)),
+      ).ok,
+    ).toBe(false);
+    expect(parseRoutineExercisesUpdate(ID, [exercise("스쿼트", MAX_SETS_PER_EXERCISE + 1)]).ok).toBe(false);
+    // 상한 그대로는 받는다.
+    expect(parseRoutineExercisesUpdate(ID, [exercise("스쿼트", MAX_SETS_PER_EXERCISE)]).ok).toBe(true);
   });
 });

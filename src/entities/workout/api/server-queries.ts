@@ -1,5 +1,7 @@
 import "server-only";
 
+import { unstable_rethrow } from "next/navigation";
+
 import type {
   StrengthExercise,
   WeeklySummary,
@@ -8,6 +10,11 @@ import type {
   WorkoutPage,
 } from "@/entities/workout/model/contracts";
 import { PHOTO_URL_EXPIRES_IN, WORKOUT_PHOTO_BUCKET } from "@/entities/workout/model/photo";
+import {
+  getRecentStrengthRange,
+  RECENT_STRENGTH_LIMIT,
+  type RecentStrengthWorkout,
+} from "@/entities/workout/model/recent-strength";
 import { RUNNING_STATS_MONTHS, type RunningStats, toRunningStats } from "@/entities/workout/model/running-stats";
 import { addDays, buildWeeklySummary, getKstToday, getWeekStart } from "@/entities/workout/model/weekly-summary";
 import { decodeWorkoutCursor, encodeWorkoutCursor } from "@/entities/workout/model/workout-cursor";
@@ -185,4 +192,54 @@ export const getRunningStats = async (today: string = getKstToday()): Promise<Ru
     monthRows: months.data,
     recordRows: records.data,
   });
+};
+
+/**
+ * 헬스 기록 작성 폼의 "최근 기록 불러오기". 오늘 포함 7일(한국 날짜) 안의 내가 쓴 헬스 기록만 최근 것부터.
+ * 동행자로 들어간 친구 기록은 RLS로는 보이지만 user_id로 거른다. 수정 화면은 지금 고치는 기록(excludeId)을 뺀다.
+ */
+export const getRecentStrengthWorkouts = async ({
+  today = getKstToday(),
+  excludeId,
+}: {
+  today?: string;
+  excludeId?: string;
+} = {}): Promise<RecentStrengthWorkout[]> => {
+  const { supabase, user } = await requireUser();
+  const { from, to } = getRecentStrengthRange(today);
+
+  let query = supabase
+    .from("workouts")
+    .select("id, workout_date, title, sets:strength_sets(exercise_name, exercise_order, set_order, weight_kg, reps)")
+    .eq("user_id", user.id)
+    .eq("kind", "strength")
+    .gte("workout_date", from)
+    .lte("workout_date", to);
+  if (excludeId && UUID_PATTERN.test(excludeId)) query = query.neq("id", excludeId);
+
+  const { data, error } = await query
+    .order("workout_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(RECENT_STRENGTH_LIMIT);
+  if (error) throw error;
+
+  return data.flatMap((row) => {
+    const exercises = toExercises(row.sets);
+    return exercises.length > 0 ? [{ exercises, id: row.id, title: row.title, workoutDate: row.workout_date }] : [];
+  });
+};
+
+// 폼용. 곁들이는 기능이라 조회가 실패해도 폼은 연다. undefined면 버튼만 숨긴다(루틴 불러오기와 같은 원칙).
+export const getRecentStrengthWorkoutsForForm = async (
+  options: { today?: string; excludeId?: string } = {},
+): Promise<RecentStrengthWorkout[] | undefined> => {
+  try {
+    return await getRecentStrengthWorkouts(options);
+  } catch (error) {
+    unstable_rethrow(error);
+    // biome-ignore lint/suspicious/noConsole: 화면은 버튼만 숨기므로 실패를 볼 곳이 서버 로그뿐이다.
+    console.error("[workout] 최근 헬스 기록을 읽지 못해 불러오기를 숨겨요.", error);
+    return undefined;
+  }
 };
