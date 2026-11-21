@@ -16,6 +16,7 @@ import type { CommentAction } from "@/features/workout-comment/model/comment-for
 import { WorkoutCommentsView } from "@/features/workout-comment/ui/workout-comments-view";
 import { CrewDetailScreen } from "@/pages/crew/detail/ui/crew-detail-screen";
 import { CrewListScreen } from "@/pages/crew/list/ui/crew-list-screen";
+import { ExerciseListScreen } from "@/pages/exercise/list/ui/exercise-list-screen";
 import { HomeScreen } from "@/pages/home/ui/home-screen";
 import { RoutineLimitScreen } from "@/pages/routine/edit/ui/routine-limit-screen";
 import { RoutineListScreen } from "@/pages/routine/list/ui/routine-list-screen";
@@ -34,6 +35,7 @@ import { loadWorkoutList } from "../model/workout-list";
 import { DEMO_USER } from "../sample-data";
 import type { DemoHomeData } from "../store";
 import * as store from "../store";
+import * as userExerciseStore from "../user-exercises";
 import { useHydrated } from "./demo-location";
 import { UNSUPPORTED_MESSAGE, useDemoNotice } from "./demo-notice";
 
@@ -91,6 +93,8 @@ export function DemoRoutes({ location, prerenderedHome }: { location: DemoLocati
       return <DemoRoutineNew from={searchParams.from} />;
     case "routine-edit":
       return <DemoRoutineEdit key={route.routineId} routineId={route.routineId} />;
+    case "exercises":
+      return <DemoExerciseList />;
     case "not-found":
       return <DemoNotFound title="땀일기" message="찾는 화면이 없어요." />;
   }
@@ -313,6 +317,25 @@ function DemoRoutineForm({
       initialValues={values}
       saveRoutine={actions.save}
       deleteRoutine={canDelete ? actions.remove : undefined}
+    />
+  );
+}
+
+function DemoExerciseList() {
+  const refreshAfter = useRefreshAfter();
+  const [actions] = useState(() => ({
+    save: refreshAfter(userExerciseStore.saveUserExercise, true),
+    remove: refreshAfter(userExerciseStore.deleteUserExercise, true),
+  }));
+  const exercises = useDemoQuery(["user-exercises"], () => userExerciseStore.getUserExercises());
+  const names = useDemoQuery(["exercise-names"], () => userExerciseStore.getRecordedExerciseNames());
+  if (!exercises.data || !names.data) return null;
+  return (
+    <ExerciseListScreen
+      exercises={exercises.data}
+      recordedNames={names.data}
+      saveExercise={actions.save}
+      deleteExercise={actions.remove}
     />
   );
 }

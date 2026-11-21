@@ -2,17 +2,20 @@
 
 import { useEffect, useMemo, useRef } from "react";
 
+import { UserExercisesProvider } from "@/entities/exercise/ui/user-exercises-provider";
 import { type AppNavigation, AppNavigationProvider } from "@/shared/lib/app-navigation";
 import { BottomNavigation } from "@/widgets/bottom-navigation";
 
 import { DEMO_APP_PATH, parseAppPath, readAppPath, toDemoHref } from "../model/demo-path";
 import { DEMO_PRERENDER_ID } from "../model/prerender-guard";
 import type { DemoHomeData } from "../store";
+import { getUserExercises, saveUserExercise } from "../user-exercises";
 import { notifyDemoLocationChange, useDemoSearch, useHydrated } from "./demo-location";
 import { DemoNoticeProvider } from "./demo-notice";
 import { DemoRoutes } from "./demo-routes";
 
 const HASH_SCROLL_FRAMES = 30;
+const DEMO_USER_EXERCISES_QUERY_KEY = ["demo", "user-exercises"] as const;
 
 /**
  * 체험 앱의 루트. 실제 앱 화면을 그대로 쓰고, 이동과 데이터만 바꿔 끼운다.
@@ -91,10 +94,13 @@ export function DemoApp({ prerenderedHome }: { prerenderedHome: DemoHomeData }) 
   return (
     <AppNavigationProvider value={navigation}>
       <DemoNoticeProvider>
-        <div id={hydrated ? undefined : DEMO_PRERENDER_ID} className="contents">
-          <DemoRoutes location={location} prerenderedHome={prerenderedHome} />
-          <BottomNavigation />
-        </div>
+        {/* 종목 입력칸의 내 종목 추천·추가. 키가 ["demo", …]라 저장 뒤 체험 조회와 함께 다시 읽는다. */}
+        <UserExercisesProvider list={getUserExercises} save={saveUserExercise} queryKey={DEMO_USER_EXERCISES_QUERY_KEY}>
+          <div id={hydrated ? undefined : DEMO_PRERENDER_ID} className="contents">
+            <DemoRoutes location={location} prerenderedHome={prerenderedHome} />
+            <BottomNavigation />
+          </div>
+        </UserExercisesProvider>
       </DemoNoticeProvider>
     </AppNavigationProvider>
   );

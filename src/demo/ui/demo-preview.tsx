@@ -15,14 +15,16 @@ export function DemoPreview() {
   // 체험 저장소(샘플 데이터 포함)는 소개 화면에서 이 버튼에만 필요하므로 누를 때 불러온다.
   const restart = async () => {
     let reset: () => void;
+    let resetUserExercises: () => void;
     try {
-      ({ reset } = await import("../store"));
+      [{ reset }, { resetUserExercises }] = await Promise.all([import("../store"), import("../user-exercises")]);
     } catch {
       // 배포 뒤 예전 청크가 없어졌거나 연결이 끊긴 경우다. 새 페이지를 받으면 다시 누를 수 있다.
       window.location.reload();
       return;
     }
     reset();
+    resetUserExercises();
     frameRef.current?.contentWindow?.location.replace(DEMO_APP_PATH);
   };
 
