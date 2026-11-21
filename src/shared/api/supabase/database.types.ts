@@ -220,6 +220,45 @@ export type Database = {
           },
         ];
       };
+      user_exercises: {
+        Row: {
+          body_part: string;
+          bodyweight: boolean;
+          created_at: string;
+          id: string;
+          name: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body_part: string;
+          bodyweight?: boolean;
+          created_at?: string;
+          id?: string;
+          name: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          body_part?: string;
+          bodyweight?: boolean;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_exercises_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       workout_comments: {
         Row: {
           body: string;
@@ -445,6 +484,14 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      get_my_exercise_names: {
+        Args: { p_exclude?: string[] };
+        Returns: {
+          exercise_name: string;
+          last_workout_date: string;
+          workout_count: number;
+        }[];
       };
       get_running_monthly_distance: {
         Args: { p_months?: number; p_today: string };
