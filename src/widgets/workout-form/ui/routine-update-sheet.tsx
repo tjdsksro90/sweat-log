@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import {
   BottomSheet,
@@ -33,6 +33,12 @@ export function RoutineUpdateSheet({
   onSkip: () => void;
 }) {
   const skipRef = useRef<HTMLButtonElement>(null);
+  const okRef = useRef<HTMLButtonElement>(null);
+
+  // 업데이트 버튼이 비활성화되며 포커스가 빠지므로, 실패 화면으로 바뀌면 "확인"에 포커스를 옮긴다.
+  useEffect(() => {
+    if (error) okRef.current?.focus();
+  }, [error]);
 
   return (
     <BottomSheet
@@ -46,10 +52,10 @@ export function RoutineUpdateSheet({
           <>
             <BottomSheetHeader>
               <BottomSheetTitle>루틴은 그대로예요</BottomSheetTitle>
-              <BottomSheetDescription>{error} 기록은 저장했어요.</BottomSheetDescription>
+              <BottomSheetDescription role="alert">{error} 기록은 저장했어요.</BottomSheetDescription>
             </BottomSheetHeader>
             <BottomSheetFooter>
-              <Button ref={skipRef} variant="primary" size="lg" onClick={onSkip}>
+              <Button ref={okRef} variant="primary" size="lg" onClick={onSkip}>
                 확인
               </Button>
             </BottomSheetFooter>

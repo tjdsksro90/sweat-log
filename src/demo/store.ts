@@ -462,13 +462,14 @@ export const createDemoStore = ({ now = () => new Date(), storage = browserStora
             row.workout_date <= to,
         )
         .sort((a, b) => compareCursor(cursorOf(b), cursorOf(a)))
+        // 실제 앱처럼 최근 20개를 먼저 자르고 세트 없는 기록을 거른다.
+        .slice(0, RECENT_STRENGTH_LIMIT)
         .flatMap((row) => {
           const exercises = toExercises(row.sets);
           return exercises.length > 0
             ? [{ id: row.id, workoutDate: row.workout_date, title: row.title, exercises }]
             : [];
-        })
-        .slice(0, RECENT_STRENGTH_LIMIT),
+        }),
     );
   };
   const reset = (): void => {

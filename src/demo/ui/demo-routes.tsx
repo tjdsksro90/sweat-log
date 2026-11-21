@@ -186,14 +186,23 @@ function DemoWorkoutEdit({ workoutId }: { workoutId: string }) {
   const crews = useDemoQuery(["form-crews"], () => store.getWorkoutFormCrews());
   const routines = useDemoQuery(["routines"], () => store.getRoutines());
   // 지금 고치는 기록 자신은 불러올 목록에서 뺀다.
-  const recent = useDemoQuery(["recent-strength", workoutId], () =>
-    store.getRecentStrengthWorkouts({ excludeId: workoutId }),
-  );
+  // 실제 앱처럼 헬스 기록을 고칠 때만 최근 기록을 준다.
+  const recent = useDemoQuery(["recent-strength", workoutId], async () => {
+    const detail = await store.getWorkoutDetail(workoutId);
+    return detail?.isMine && detail.kind === "strength"
+      ? store.getRecentStrengthWorkouts({ excludeId: workoutId })
+      : null;
+  });
   if (workout.isPending || !crews.data || !routines.data || recent.isPending) return null;
   // 실제 앱처럼 남의 기록은 수정 화면이 없는 것으로 본다.
   if (!workout.data?.isMine) return <DemoNotFound title="기록 수정" message="내가 쓴 기록만 고칠 수 있어요." />;
   return (
-    <DemoWorkoutForm crews={crews.data} routines={routines.data} recentWorkouts={recent.data} detail={workout.data} />
+    <DemoWorkoutForm
+      crews={crews.data}
+      routines={routines.data}
+      recentWorkouts={recent.data ?? undefined}
+      detail={workout.data}
+    />
   );
 }
 

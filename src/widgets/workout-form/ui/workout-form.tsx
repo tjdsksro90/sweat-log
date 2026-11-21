@@ -7,6 +7,7 @@ import { TrashIcon, XIcon } from "@phosphor-icons/react";
 import type { Routine } from "@/entities/routine/model/routine";
 import type { StrengthExercise, WorkoutPhoto } from "@/entities/workout/model/contracts";
 import type { RecentStrengthWorkout } from "@/entities/workout/model/recent-strength";
+import { hasEnteredExercises } from "@/features/workout/model/routine-form";
 import {
   isWorkoutFormDirty,
   WORKOUT_FORM_STEP_LABELS,
@@ -94,8 +95,12 @@ export function WorkoutForm({
   const [isDeleting, startDeleting] = useTransition();
   const bodyRef = useRef<HTMLDivElement>(null);
   /**
-   * 이 폼에서 마지막으로 불러온 루틴. 기록에는 저장하지 않고 폼 상태로만 기억한다.
-   * 최근 기록을 불러오면 루틴을 불러온 게 아니므로 지운다. 저장 뒤 한 번 묻고 나면 지운다.
+   * 이 폼에서 마지막으로 불러온 루틴. 기록에는 저장하지 않고 폼 상태로만 기억한다. 저장 뒤 한 번 묻고 나면 지운다.
+   * 지우는 때(그 뒤로는 루틴을 다시 불러와야 묻는다):
+   * - 기록 종류가 헬스에서 다른 것으로 바뀔 때
+   * - 종목을 모두 지웠을 때(적은 종목이 하나도 없을 때)
+   * - 최근 기록 불러오기로 덮어썼을 때. 뒤에 붙이면 루틴으로 운동한 것이라 그대로 둔다.
+   * 다른 루틴을 불러오면 그 루틴으로 바뀐다(마지막 루틴만 묻는다).
    */
   const [loadedRoutine, setLoadedRoutine] = useState<{ id: string; name: string } | null>(null);
   const [routinePrompt, setRoutinePrompt] = useState<RoutinePrompt | null>(null);
@@ -109,6 +114,28 @@ export function WorkoutForm({
   const showPhotos = Boolean(photoActions || photoUnavailableMessage);
   const isDirty = isWorkoutFormDirty(initialValues, values) || isPhotoDraftDirty(photos.draft);
   const guard = useLeaveGuard(isDirty);
+
+  const hasExercises = hasEnteredExercises(values.exercises);
+  useEffect(() => {
+    if (values.kind !== "strength" || !hasExercises) setLoadedRoutine(null);
+  }, [values.kind, hasExercises]);
+
+  /**
+   * 저장을 마치고 루틴 갱신을 묻는 동안 브라우저 뒤로 가기는 "그대로 두기"로 보고 상세로 보낸다.
+   * 이때 이탈 확인은 이미 꺼 두어(allowLeave) "적은 내용이 사라져요"가 겹쳐 뜨지 않는다.
+   * 사진 일부가 실패해 폼에 머무는 경우(nextHref 없음)는 작성 중과 같아 그대로 둔다.
+   */
+  const promptNextHref = routinePrompt?.nextHref ?? null;
+  useEffect(() => {
+    if (!promptNextHref) return;
+    const skip = () => {
+      setRoutinePrompt(null);
+      setRoutineUpdateError(null);
+      router.replace(promptNextHref);
+    };
+    window.addEventListener("popstate", skip);
+    return () => window.removeEventListener("popstate", skip);
+  }, [promptNextHref, router]);
 
   /**
    * 오류를 보여주면 첫 오류 입력으로, 단계를 옮기면 단계 제목으로 포커스를 옮긴다.
@@ -139,8 +166,10 @@ export function WorkoutForm({
     window.scrollTo({ top: 0 });
   };
 
-  const handleSourceLoaded = (source: ExerciseLoadSource) =>
-    setLoadedRoutine(source.kind === "routine" ? { id: source.routine.id, name: source.routine.name } : null);
+  const handleSourceLoaded = (source: ExerciseLoadSource) => {
+    if (source.kind === "routine") setLoadedRoutine({ id: source.routine.id, name: source.routine.name });
+    else if (source.mode === "replace") setLoadedRoutine(null);
+  };
 
   const finishRoutinePrompt = () => {
     const nextHref = routinePrompt?.nextHref ?? null;
@@ -211,6 +240,8 @@ export function WorkoutForm({
       }
 
       if (prompt) {
+        // 기록은 저장됐으니 질문하는 동안 이탈 확인을 끈다.
+        guard.allowLeave();
         setRoutinePrompt({ ...prompt, nextHref: `/workouts/${saved.id}` });
         return;
       }

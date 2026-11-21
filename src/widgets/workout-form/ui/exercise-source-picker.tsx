@@ -49,7 +49,7 @@ export function ExerciseSourcePicker<Source extends ExerciseSource>({
 }: {
   sources: Source[];
   exercises: Exercises;
-  onLoad: (update: (exercises: Exercises) => Exercises, source: Source) => void;
+  onLoad: (update: (exercises: Exercises) => Exercises, source: Source, mode: RoutineLoadMode) => void;
   onOpen?: () => void;
   triggerIcon: ReactNode;
   triggerLabel: string;
@@ -68,7 +68,7 @@ export function ExerciseSourcePicker<Source extends ExerciseSource>({
   };
 
   const load = (source: Source, mode: RoutineLoadMode) => {
-    onLoad((current) => loadRoutineExercises(current, source.exercises, mode), source);
+    onLoad((current) => loadRoutineExercises(current, source.exercises, mode), source, mode);
     close();
   };
 

@@ -22,13 +22,7 @@ export const getRecentStrengthRange = (today: string) => ({
   to: today,
 });
 
-// 날짜 → 작성 시각 → id 내림차순(가장 최근이 먼저).
-export const compareRecentStrength = (
-  a: { workoutDate: string; createdAt: string; id: string },
-  b: { workoutDate: string; createdAt: string; id: string },
-) => b.workoutDate.localeCompare(a.workoutDate) || b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id);
-
-// 목록 한 줄 제목. 예: "11월 20일 (금) · 하체" / 제목이 없으면 날짜만.
+// 목록에 쓰는 날짜. 예: "11월 20일 (금)"
 export const formatRecentStrengthDate = (workoutDate: string) => {
   const [year, month, day] = workoutDate.split("-").map(Number);
   const weekday = ["일", "월", "화", "수", "목", "금", "토"][new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
