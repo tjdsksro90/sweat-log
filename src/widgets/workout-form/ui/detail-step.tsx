@@ -1,4 +1,5 @@
 import type { Routine } from "@/entities/routine/model/routine";
+import type { RecentStrengthWorkout } from "@/entities/workout/model/recent-strength";
 import type { WorkoutFormValues } from "@/features/workout/model/workout-form";
 import type { WorkoutFormErrors } from "@/features/workout/model/workout-input";
 
@@ -12,11 +13,13 @@ export function DetailStep({
   errors,
   onChange,
   routines,
+  recentWorkouts,
 }: {
   values: WorkoutFormValues;
   errors: WorkoutFormErrors;
   onChange: (update: (values: WorkoutFormValues) => WorkoutFormValues) => void;
   routines?: Routine[];
+  recentWorkouts?: RecentStrengthWorkout[];
 }) {
   if (values.kind === "run") {
     return (
@@ -34,6 +37,7 @@ export function DetailStep({
           errors={errors}
           onChange={(change) => onChange((current) => ({ ...current, exercises: change(current.exercises) }))}
           routines={routines}
+          recentWorkouts={recentWorkouts}
         />
       )}
       <DurationFields

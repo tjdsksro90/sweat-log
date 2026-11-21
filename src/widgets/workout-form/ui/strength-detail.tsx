@@ -1,8 +1,11 @@
+import { useState } from "react";
+
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 
 import { findExercise } from "@/entities/exercise/model/search-exercises";
 import { ExerciseNameInput } from "@/entities/exercise/ui/exercise-name-input";
 import type { Routine } from "@/entities/routine/model/routine";
+import type { RecentStrengthWorkout } from "@/entities/workout/model/recent-strength";
 import {
   addExercise,
   addSet,
@@ -26,7 +29,7 @@ import { FieldError } from "@/shared/ui/field";
 import { NumberInput } from "@/shared/ui/number-input";
 
 import { FormField } from "./form-field";
-import { RoutinePicker } from "./routine-picker";
+import { RecentWorkoutPicker, RoutinePicker } from "./routine-picker";
 
 // 세트 번호 · 무게 · 횟수 · 삭제
 const SET_ROW = "grid grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1fr)_2.75rem] items-start gap-2";
@@ -168,24 +171,59 @@ function ExerciseCard({
 
 /**
  * 무게를 비우면 맨몸 운동. 새 세트는 직전 세트 값을 복사한다(addSet).
- * routines를 넘기면(기록 작성 폼) 루틴 불러오기를 보여 준다. 루틴 편집 폼은 넘기지 않는다.
+ * routines·recentWorkouts를 넘기면(기록 작성 폼) 불러오기를 보여 준다. 루틴 편집 폼은 넘기지 않는다.
  */
 export function StrengthDetail({
   exercises,
   errors,
   onChange,
   routines,
+  recentWorkouts,
 }: {
   exercises: Exercises;
   errors: WorkoutFormErrors;
   onChange: (update: (exercises: Exercises) => Exercises) => void;
   routines?: Routine[];
+  recentWorkouts?: RecentStrengthWorkout[];
 }) {
   const update: Update = (change) => onChange((current) => change({ exercises: current }).exercises);
+  const [loadedMessage, setLoadedMessage] = useState("");
+  const clearMessage = () => setLoadedMessage("");
+  const hasPickers = Boolean(routines || recentWorkouts);
 
   return (
     <div className="flex flex-col gap-4">
-      {routines && <RoutinePicker routines={routines} exercises={exercises} onLoad={onChange} />}
+      {hasPickers && (
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-2">
+            {routines && (
+              <RoutinePicker
+                routines={routines}
+                exercises={exercises}
+                onOpen={clearMessage}
+                onLoad={(change, routine) => {
+                  onChange(change);
+                  setLoadedMessage(`‘${routine.name}’ 루틴을 불러왔어요. 무게와 횟수는 바로 고칠 수 있어요.`);
+                }}
+              />
+            )}
+            {recentWorkouts && (
+              <RecentWorkoutPicker
+                workouts={recentWorkouts}
+                exercises={exercises}
+                onOpen={clearMessage}
+                onLoad={(change) => {
+                  onChange(change);
+                  setLoadedMessage("최근 기록을 불러왔어요. 무게와 횟수는 바로 고칠 수 있어요.");
+                }}
+              />
+            )}
+          </div>
+          <p role="status" className="text-caption text-muted-foreground empty:sr-only">
+            {loadedMessage}
+          </p>
+        </div>
+      )}
       <p className="text-caption text-muted-foreground">무게를 비우면 맨몸 운동으로 저장해요.</p>
       {exercises.map((exercise, index) => (
         <ExerciseCard key={exercise.key} exercise={exercise} index={index} errors={errors} onChange={update} />

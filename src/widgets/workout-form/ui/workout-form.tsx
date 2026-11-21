@@ -6,6 +6,7 @@ import { TrashIcon, XIcon } from "@phosphor-icons/react";
 
 import type { Routine } from "@/entities/routine/model/routine";
 import type { WorkoutPhoto } from "@/entities/workout/model/contracts";
+import type { RecentStrengthWorkout } from "@/entities/workout/model/recent-strength";
 import {
   isWorkoutFormDirty,
   WORKOUT_FORM_STEP_LABELS,
@@ -40,6 +41,7 @@ type WorkoutFormProps = {
   photoActions?: PhotoActions; // 없으면 사진 고르기를 보여 주지 않는다
   photoUnavailableMessage?: string; // 체험 데모처럼 사진을 막을 때 고르기 자리에 보여 줄 안내
   routines?: Routine[]; // 헬스 상세에서 불러올 내 루틴. 없으면 불러오기를 보여 주지 않는다
+  recentWorkouts?: RecentStrengthWorkout[]; // 최근 7일 내 헬스 기록. 없으면 최근 기록 불러오기를 보여 주지 않는다
 };
 
 /**
@@ -59,6 +61,7 @@ export function WorkoutForm({
   photoActions,
   photoUnavailableMessage,
   routines,
+  recentWorkouts,
 }: WorkoutFormProps) {
   const router = useAppRouter();
   const [values, setValues] = useState(initialValues);
@@ -230,7 +233,15 @@ export function WorkoutForm({
             {stepIndex + 1}. {WORKOUT_FORM_STEP_LABELS[step]}
           </h2>
           {step === "basics" && <BasicsStep values={values} errors={errors} today={today} onChange={update} />}
-          {step === "detail" && <DetailStep values={values} errors={errors} onChange={update} routines={routines} />}
+          {step === "detail" && (
+            <DetailStep
+              values={values}
+              errors={errors}
+              onChange={update}
+              routines={routines}
+              recentWorkouts={recentWorkouts}
+            />
+          )}
           {step === "finish" && (
             <FinishStep
               values={values}

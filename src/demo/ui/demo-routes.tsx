@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ROUTINE_LIMITS, type Routine } from "@/entities/routine/model/routine";
 import type { WorkoutDetail } from "@/entities/workout/model/contracts";
+import type { RecentStrengthWorkout } from "@/entities/workout/model/recent-strength";
 import { isWorkoutKind } from "@/entities/workout/model/types";
 import { getKstToday } from "@/entities/workout/model/weekly-summary";
 import type { CrewFormAction } from "@/features/crew/model/crew-form";
@@ -168,11 +169,13 @@ function DemoWorkoutDetail({ workoutId }: { workoutId: string }) {
 function DemoWorkoutNew({ kind }: { kind: SearchParams[string] }) {
   const crews = useDemoQuery(["form-crews"], () => store.getWorkoutFormCrews());
   const routines = useDemoQuery(["routines"], () => store.getRoutines());
-  if (!crews.data || !routines.data) return null;
+  const recent = useDemoQuery(["recent-strength"], () => store.getRecentStrengthWorkouts());
+  if (!crews.data || !routines.data || recent.isPending) return null;
   return (
     <DemoWorkoutForm
       crews={crews.data}
       routines={routines.data}
+      recentWorkouts={recent.data}
       kind={typeof kind === "string" && isWorkoutKind(kind) ? kind : undefined}
     />
   );
@@ -182,21 +185,29 @@ function DemoWorkoutEdit({ workoutId }: { workoutId: string }) {
   const workout = useDemoQuery(["workout", workoutId], () => store.getWorkoutDetail(workoutId));
   const crews = useDemoQuery(["form-crews"], () => store.getWorkoutFormCrews());
   const routines = useDemoQuery(["routines"], () => store.getRoutines());
-  if (workout.isPending || !crews.data || !routines.data) return null;
+  // 지금 고치는 기록 자신은 불러올 목록에서 뺀다.
+  const recent = useDemoQuery(["recent-strength", workoutId], () =>
+    store.getRecentStrengthWorkouts({ excludeId: workoutId }),
+  );
+  if (workout.isPending || !crews.data || !routines.data || recent.isPending) return null;
   // 실제 앱처럼 남의 기록은 수정 화면이 없는 것으로 본다.
   if (!workout.data?.isMine) return <DemoNotFound title="기록 수정" message="내가 쓴 기록만 고칠 수 있어요." />;
-  return <DemoWorkoutForm crews={crews.data} routines={routines.data} detail={workout.data} />;
+  return (
+    <DemoWorkoutForm crews={crews.data} routines={routines.data} recentWorkouts={recent.data} detail={workout.data} />
+  );
 }
 
 // 폼은 처음 값과 지금 값을 비교해 이탈을 확인하므로, 처음 값은 화면에 들어올 때 한 번만 만든다.
 function DemoWorkoutForm({
   crews,
   routines,
+  recentWorkouts,
   detail,
   kind,
 }: {
   crews: WorkoutFormCrew[];
   routines: Routine[];
+  recentWorkouts?: RecentStrengthWorkout[];
   detail?: WorkoutDetail;
   kind?: Parameters<typeof createWorkoutFormValues>[1];
 }) {
@@ -222,6 +233,7 @@ function DemoWorkoutForm({
       deleteWorkout={detail ? actions.remove : undefined}
       photoUnavailableMessage={DEMO_PHOTO_MESSAGE}
       routines={routines}
+      recentWorkouts={recentWorkouts}
     />
   );
 }

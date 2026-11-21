@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { getMyRoutinesForForm } from "@/entities/routine/api/server-queries";
-import { getWorkoutDetail } from "@/entities/workout/api/server-queries";
+import { getRecentStrengthWorkoutsForForm, getWorkoutDetail } from "@/entities/workout/api/server-queries";
 import { deleteWorkout, saveWorkout } from "@/features/workout/api/workout-actions";
 import { fromWorkoutDetail, getTodayInSeoul } from "@/features/workout/model/workout-form";
 import { deleteWorkoutPhoto, uploadWorkoutPhoto } from "@/features/workout-photo/api/photo-actions";
@@ -11,10 +11,13 @@ import { getWorkoutFormCrews } from "@/widgets/workout-form/api/get-form-crews";
 
 export async function EditWorkoutPage({ workoutId }: { workoutId: string }) {
   const { user } = await requireUser();
-  const [detail, crews, routines] = await Promise.all([
+  const today = getTodayInSeoul();
+  const [detail, crews, routines, recentWorkouts] = await Promise.all([
     getWorkoutDetail(workoutId),
     getWorkoutFormCrews(user.id),
     getMyRoutinesForForm(),
+    // 지금 고치는 기록 자신은 불러올 목록에서 뺀다.
+    getRecentStrengthWorkoutsForForm({ today, excludeId: workoutId }),
   ]);
 
   // 남의 기록은 볼 수는 있어도 고칠 수 없다. 수정 화면 자체를 없는 것으로 본다.
@@ -29,13 +32,14 @@ export async function EditWorkoutPage({ workoutId }: { workoutId: string }) {
         userId: companion.id,
         nickname: companion.nickname,
       }))}
-      today={getTodayInSeoul()}
+      today={today}
       closeHref={`/workouts/${detail.id}`}
       saveWorkout={saveWorkout}
       deleteWorkout={deleteWorkout}
       initialPhotos={detail.photos}
       photoActions={{ upload: uploadWorkoutPhoto, remove: deleteWorkoutPhoto }}
       routines={routines}
+      recentWorkouts={recentWorkouts}
     />
   );
 }

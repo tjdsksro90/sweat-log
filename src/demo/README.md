@@ -27,6 +27,7 @@
 | `getRoutine` | `id: string` | `Promise<Routine \| null>` |
 | `saveRoutine` | `input: RoutineInput` | `Promise<SaveRoutineResult>` |
 | `deleteRoutine` | `id: string` | `Promise<DeleteRoutineResult>` |
+| `getRecentStrengthWorkouts` | `options?: { today?: string; excludeId?: string }` (오늘 포함 7일, 내가 쓴 헬스만) | `Promise<RecentStrengthWorkout[]>` |
 | `reset` | 없음 | `void` |
 | `createDemoStore` | `options?: DemoStoreOptions` (`now?: () => Date`, `storage?: () => DemoStorage \| null`) | `DemoStore` |
 | `createSampleData` | `now?: Date` | `DemoState` |
