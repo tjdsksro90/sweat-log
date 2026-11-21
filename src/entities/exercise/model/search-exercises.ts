@@ -1,6 +1,6 @@
-import { EXERCISES } from "./exercises";
+import { EXERCISES, type ExerciseDefinition } from "./exercises";
 
-// 최고 무게 SQL 함수도 동일하게 공백을 모두 제거한다. 대소문자나 유사 종목은 합치지 않는다.
+// 최고 무게 SQL 함수와 내 종목 유일 인덱스도 동일하게 공백을 모두 제거한다. 대소문자나 유사 종목은 합치지 않는다.
 export const normalizeExerciseName = (name: string) => name.replace(/\s+/gu, "");
 const INITIALS = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
 const initial = (char: string) => {
@@ -16,13 +16,36 @@ const matchesName = (name: string, term: string) =>
     ),
   );
 
-export const searchExercises = (query: string) => {
+/**
+ * 추천에 뜨는 종목. 사전 종목이면 userExerciseId가 없고, 내 종목이면 그 id가 있다.
+ * 내 종목은 사전 종목과 같은 모양(이름·부위·맨몸)이라 검색과 맨몸 안내를 그대로 쓴다.
+ */
+export type ExerciseOption = ExerciseDefinition & { userExerciseId?: string };
+type UserExerciseLike = ExerciseDefinition & { id: string };
+
+const isSameName = (left: string, right: string) => normalizeExerciseName(left) === normalizeExerciseName(right);
+
+/**
+ * 내 종목을 앞에, 사전 종목을 뒤에 둔다. 직접 등록한 종목이 찾는 종목일 가능성이 높다.
+ * 사전에 나중에 같은 이름이 생기면 사전 종목 하나만 남긴다.
+ */
+export const listExerciseOptions = (userExercises: readonly UserExerciseLike[] = []): ExerciseOption[] => [
+  ...userExercises
+    .filter((exercise) => !EXERCISES.some((item) => isSameName(item.name, exercise.name)))
+    .map(({ id, name, bodyPart, bodyweight }) => ({ bodyPart, bodyweight, name, userExerciseId: id })),
+  ...EXERCISES,
+];
+
+export const searchExercises = (query: string, userExercises: readonly UserExerciseLike[] = []) => {
   const term = normalizeExerciseName(query).toLowerCase();
-  return EXERCISES.filter(({ name, bodyPart }) => {
+  return listExerciseOptions(userExercises).filter(({ name, bodyPart }) => {
     const normalized = normalizeExerciseName(name).toLowerCase();
     return matchesName(normalized, term) || bodyPart.startsWith(term);
   });
 };
 
-export const findExercise = (name: string) =>
-  EXERCISES.find((exercise) => normalizeExerciseName(exercise.name) === normalizeExerciseName(name));
+// 공백만 다른 이름은 같은 종목이다. 대소문자는 구분한다.
+export const findExercise = (
+  name: string,
+  userExercises: readonly UserExerciseLike[] = [],
+): ExerciseOption | undefined => listExerciseOptions(userExercises).find((exercise) => isSameName(exercise.name, name));

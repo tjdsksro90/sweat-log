@@ -1,4 +1,6 @@
-export type ExerciseBodyPart = "가슴" | "등" | "하체" | "어깨" | "팔" | "코어";
+// 내 종목(user_exercises.body_part) check 제약과 같은 6개. 화면에 보이는 순서다.
+export const EXERCISE_BODY_PARTS = ["가슴", "등", "어깨", "하체", "팔", "코어"] as const;
+export type ExerciseBodyPart = (typeof EXERCISE_BODY_PARTS)[number];
 export type ExerciseDefinition = { name: string; bodyPart: ExerciseBodyPart; bodyweight: boolean };
 
 export const EXERCISES: readonly ExerciseDefinition[] = [
