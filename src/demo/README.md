@@ -30,10 +30,15 @@
 | `updateRoutineExercises` | `id: string, exercises: RoutineExercise[]` (이름은 두고 구성만 바꾼다) | `Promise<SaveRoutineResult>` |
 | `getRecentStrengthWorkouts` | `options?: { today?: string; excludeId?: string }` (오늘 포함 7일, 내가 쓴 헬스만) | `Promise<RecentStrengthWorkout[]>` |
 | `reset` | 없음 | `void` |
+| `@/demo/user-exercises`의 `getUserExercises` | 없음 | `Promise<UserExercise[]>` (이름순) |
+| `saveUserExercise` | `input: UserExerciseInput` | `Promise<SaveUserExerciseResult>` |
+| `deleteUserExercise` | `id: string` | `Promise<DeleteUserExerciseResult>` |
+| `getRecordedExerciseNames` | 없음 | `Promise<RecordedExerciseName[]>` |
+| `resetUserExercises` | 없음 | `void` |
 | `createDemoStore` | `options?: DemoStoreOptions` (`now?: () => Date`, `storage?: () => DemoStorage \| null`) | `DemoStore` |
 | `createSampleData` | `now?: Date` | `DemoState` |
 
-목록은 실제 API처럼 20개씩 날짜·작성 시각·ID 내림차순으로 반환한다. 기본 목록은 내 기록과 동행 기록이며, `crewId`를 지정하면 크루 공유 기록이다. 주간 요약은 내가 작성한 기록만 집계한다. 러닝 통계는 실제 앱처럼 내가 작성했거나 함께한 러닝을 `buildRunningStats`로 집계한다. 수정·삭제는 본인 기록과 댓글에만 허용한다. 루틴은 샘플 2개(하체 데이, 상체 밀기)로 시작하고 실제 앱과 같은 `parseRoutineInput`으로 검증하며 30개까지 저장한다. 루틴이 생기기 전에 저장된 세션은 기록을 그대로 두고 샘플 루틴만 채운다.
+목록은 실제 API처럼 20개씩 날짜·작성 시각·ID 내림차순으로 반환한다. 기본 목록은 내 기록과 동행 기록이며, `crewId`를 지정하면 크루 공유 기록이다. 주간 요약은 내가 작성한 기록만 집계한다. 러닝 통계는 실제 앱처럼 내가 작성했거나 함께한 러닝을 `buildRunningStats`로 집계한다. 수정·삭제는 본인 기록과 댓글에만 허용한다. 루틴은 샘플 2개(하체 데이, 상체 밀기)로 시작하고 실제 앱과 같은 `parseRoutineInput`으로 검증하며 30개까지 저장한다. 루틴이 생기기 전에 저장된 세션은 기록을 그대로 두고 샘플 루틴만 채운다. 내 종목은 `user-exercises.ts`가 따로 키(`sweat-log:demo:user-exercises:v1`)에 둔다. 샘플 1개(케이블 킥백)로 시작하고, 실제 앱과 같은 `parseUserExerciseInput`·`findDuplicateExercise`로 검증하며 100개까지 저장한다. "기록에만 있는 종목"은 위 조회 함수로 내 헬스 기록을 읽어 공백을 뺀 이름으로 묶는다. "처음부터 다시"는 두 저장소를 함께 reset한다.
 
 날짜·커서·목록/상세 매핑·주간 합계·입력 검증·폼 크루 변환은 기존 순수 함수를 재사용한다. 실제 Server Action 모듈에서는 타입만 가져온다.
 

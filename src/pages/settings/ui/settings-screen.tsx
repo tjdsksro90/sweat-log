@@ -1,4 +1,4 @@
-import { ClipboardTextIcon } from "@phosphor-icons/react/ssr";
+import { BarbellIcon, ClipboardTextIcon } from "@phosphor-icons/react/ssr";
 
 import { LogoutButton } from "@/features/auth/ui/logout-button";
 import { PushSettings, type PushSettingsActions } from "@/features/push-notification/ui/push-settings";
@@ -35,6 +35,18 @@ export function SettingsScreen({
           <Button role="link" variant="outline" render={<AppLink href="/settings/routines" />} nativeButton={false}>
             <ClipboardTextIcon />
             루틴 관리
+          </Button>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="flex flex-col gap-3">
+          <h2 className="font-semibold text-title">내 종목</h2>
+          <p className="text-body text-muted-foreground">
+            기본 종목에 없는 운동을 부위와 함께 등록해 두고 기록할 때 추천받아요.
+          </p>
+          <Button role="link" variant="outline" render={<AppLink href="/settings/exercises" />} nativeButton={false}>
+            <BarbellIcon />
+            종목 관리
           </Button>
         </CardContent>
       </Card>
